@@ -24,16 +24,24 @@ export async function parsePDF(file: File): Promise<RawTransaction[]> {
 
             // ... (rest of the parsing logic) ...
 
+            // Yield to main thread to avoid freezing UI
+            await new Promise(resolve => setTimeout(resolve, 0));
+
             // Regex to find dates: \d{2}[/-]\d{2}[/-]\d{2,4}
             const dateRegex = /(\d{2}[/-]\d{2}[/-]\d{2,4})/g;
 
-            let match;
-            while ((match = dateRegex.exec(fullText)) !== null) {
-                // ... (existing loop logic) ...
+            // Find all date matches first to avoid repeated slicing/searching
+            const dateMatches = Array.from(fullText.matchAll(dateRegex));
+
+            for (let j = 0; j < dateMatches.length; j++) {
+                const match = dateMatches[j];
                 const dateStr = match[0];
                 const startIndex = match.index;
-                const nextDateMatch = fullText.slice(startIndex + dateStr.length).match(dateRegex);
-                const endIndex = nextDateMatch ? startIndex + dateStr.length + nextDateMatch.index! : fullText.length;
+
+                // End index is the start of the next date match, or end of text
+                const nextMatch = dateMatches[j + 1];
+                const endIndex = nextMatch ? nextMatch.index : fullText.length;
+
                 const lineContent = fullText.slice(startIndex, endIndex);
 
                 const amountRegex = /(-?[\d,]+\.\d{2})|(-?[\d.]+\,\d{2})/;
