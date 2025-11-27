@@ -10,13 +10,13 @@ export function useCategories() {
 
     const fetchCategories = async () => {
         if (!user) return;
-        
+
         try {
             const { data, error } = await supabase
                 .from('categories')
                 .select('*')
                 .order('name');
-            
+
             if (error) throw error;
 
             const mappedCategories: Category[] = data.map(c => ({
@@ -61,8 +61,21 @@ export function useCategories() {
             is_system: false
         };
 
-        const { error } = await supabase.from('categories').insert([dbCategory]);
+        const { data, error } = await supabase.from('categories').insert([dbCategory]).select().single();
         if (error) throw error;
+
+        // Optimistic Update
+        if (data) {
+            const newCat: Category = {
+                id: data.id,
+                name: data.name,
+                type: data.type as 'income' | 'expense',
+                color: data.color,
+                icon: data.icon,
+                isSystem: data.is_system
+            };
+            setCategories(prev => [...(prev || []), newCat].sort((a, b) => a.name.localeCompare(b.name)));
+        }
     };
 
     const updateCategory = async (id: string, updates: Partial<Category>) => {
@@ -74,11 +87,17 @@ export function useCategories() {
 
         const { error } = await supabase.from('categories').update(dbUpdates).eq('id', id);
         if (error) throw error;
+
+        // Optimistic Update
+        setCategories(prev => prev?.map(c => c.id === id ? { ...c, ...updates } : c));
     };
 
     const deleteCategory = async (id: string) => {
         const { error } = await supabase.from('categories').delete().eq('id', id);
         if (error) throw error;
+
+        // Optimistic Update
+        setCategories(prev => prev?.filter(c => c.id !== id));
     };
 
     return {

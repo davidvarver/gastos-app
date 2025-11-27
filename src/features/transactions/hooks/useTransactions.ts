@@ -341,14 +341,71 @@ export function useTransactions() {
             if (newTx.type === 'income') await updateAccountBalance(newTx.account_id, newAmount);
             else if (newTx.type === 'expense') await updateAccountBalance(newTx.account_id, -newAmount);
 
-            // 5. Regenerate Maaser (Logic duplicated from addTransactions, should be refactored)
-            // For now, let's just leave it simple: if they edit, we don't auto-regenerate Maaser unless we copy that logic.
-            // Given the user wants "fast", I'll skip auto-regeneration on edit for this iteration unless critical.
-            // Actually, it IS critical for the "Maaser" feature.
-            // I'll add a TODO or simple check.
+            // 5. Regenerate Maaser
+            const { data: maaserAccount } = await supabase
+                .from('accounts')
+                .select('*')
+                .ilike('name', 'maaser')
+                .single();
 
-            // ... (Maaser regeneration logic would go here)
+            if (maaserAccount && !newTx.is_system_generated) {
+                const isMaaserable = newTx.is_maaserable;
+                const isDeductible = newTx.is_deductible;
+
+                // Income -> 10% to Maaser
+                if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
+                    const maaserAmount = Number(newTx.amount) * 0.10;
+                    if (maaserAmount > 0) {
+                        const autoTxId = crypto.randomUUID();
+                        const maaserTx = {
+                            id: autoTxId,
+                            user_id: user.id,
+                            date: newTx.date,
+                            amount: maaserAmount,
+                            description: `Maaser (10%): ${newTx.description}`,
+                            type: 'transfer',
+                            account_id: newTx.account_id,
+                            to_account_id: maaserAccount.id,
+                            status: 'cleared',
+                            is_system_generated: true,
+                            related_transaction_id: id
+                        };
+                        await supabase.from('transactions').insert(maaserTx);
+                        await updateAccountBalance(newTx.account_id, -maaserAmount);
+                        await updateAccountBalance(maaserAccount.id, maaserAmount);
+                    }
+                }
+
+                // Deductible Expense -> Refund from Maaser
+                if (newTx.type === 'expense' && isDeductible === true && newTx.account_id !== maaserAccount.id) {
+                    const autoTxId = crypto.randomUUID();
+                    const refundTx = {
+                        id: autoTxId,
+                        user_id: user.id,
+                        date: newTx.date,
+                        amount: Number(newTx.amount),
+                        description: `Reembolso Maaser: ${newTx.description}`,
+                        type: 'transfer',
+                        account_id: maaserAccount.id,
+                        to_account_id: newTx.account_id,
+                        status: 'cleared',
+                        is_system_generated: true,
+                        related_transaction_id: id
+                    };
+                    await supabase.from('transactions').insert(refundTx);
+                    await updateAccountBalance(maaserAccount.id, -Number(newTx.amount));
+                    await updateAccountBalance(newTx.account_id, Number(newTx.amount));
+                }
+            }
         }
+
+        // Optimistic Update
+        setTransactions(prev => prev?.map(t => {
+            if (t.id === id) {
+                return { ...t, ...updates, date: updates.date || t.date };
+            }
+            return t;
+        }));
     };
 
     return {
