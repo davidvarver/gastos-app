@@ -336,17 +336,19 @@ export function useTransactions() {
         // 4. Apply New Balance
         // Need to fetch updated tx to be sure
         const { data: newTx } = await supabase.from('transactions').select('*').eq('id', id).single();
+        let maaserAccount: any = null;
         if (newTx) {
             const newAmount = Number(newTx.amount);
             if (newTx.type === 'income') await updateAccountBalance(newTx.account_id, newAmount);
             else if (newTx.type === 'expense') await updateAccountBalance(newTx.account_id, -newAmount);
 
             // 5. Regenerate Maaser
-            const { data: maaserAccount } = await supabase
+            const { data: mAccount } = await supabase
                 .from('accounts')
                 .select('*')
                 .ilike('name', 'maaser')
                 .single();
+            maaserAccount = mAccount;
 
             if (maaserAccount && !newTx.is_system_generated && user) {
                 const isMaaserable = newTx.is_maaserable;
