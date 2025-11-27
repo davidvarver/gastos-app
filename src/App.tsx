@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import React from 'react';
+
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { AccountsPage } from './features/accounts/AccountsPage';
@@ -9,9 +8,10 @@ import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginPage } from './features/auth/LoginPage';
 import { Loader2 } from 'lucide-react';
 
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 function AppContent() {
   const { user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = React.useState('dashboard');
 
   if (loading) {
     return (
@@ -25,19 +25,15 @@ function AppContent() {
     return <LoginPage />;
   }
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard': return <DashboardPage />;
-      case 'accounts': return <AccountsPage />;
-      case 'transactions': return <TransactionsPage />;
-      case 'import': return <ImportPage />;
-      default: return <DashboardPage />;
-    }
-  };
-
   return (
-    <AppLayout currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderPage()}
+    <AppLayout>
+      <Routes>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/import" element={<ImportPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </AppLayout>
   );
 }
@@ -45,7 +41,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </AuthProvider>
   );
 }

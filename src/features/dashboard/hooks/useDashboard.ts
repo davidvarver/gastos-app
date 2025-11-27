@@ -52,7 +52,7 @@ export function useDashboard(date: Date = new Date()) {
             // Chart Data
             const expensesByCategory = transactions
                 ?.filter(t => t.type === 'expense')
-                .reduce((acc, t) => {
+                .reduce((acc: Record<string, { value: number, color: string }>, t) => {
                     const catName = t.categories?.name || 'Sin Categoría';
                     const catColor = t.categories?.color || '#cbd5e1';
 
@@ -61,7 +61,7 @@ export function useDashboard(date: Date = new Date()) {
                     }
                     acc[catName].value += Number(t.amount);
                     return acc;
-                }, {} as Record<string, { value: number, color: string }>);
+                }, {});
 
             const chartData = Object.entries(expensesByCategory || {}).map(([name, data]) => ({
                 name,
