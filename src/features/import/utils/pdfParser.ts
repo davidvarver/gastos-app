@@ -2,7 +2,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { type RawTransaction } from './parsers';
 
 // Set worker source
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 export async function parsePDF(file: File): Promise<RawTransaction[]> {
     const arrayBuffer = await file.arrayBuffer();
