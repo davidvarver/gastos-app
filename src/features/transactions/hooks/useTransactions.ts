@@ -348,7 +348,7 @@ export function useTransactions() {
                 .ilike('name', 'maaser')
                 .single();
 
-            if (maaserAccount && !newTx.is_system_generated) {
+            if (maaserAccount && !newTx.is_system_generated && user) {
                 const isMaaserable = newTx.is_maaserable;
                 const isDeductible = newTx.is_deductible;
 
