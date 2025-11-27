@@ -214,6 +214,26 @@ export function useTransactions() {
         for (const [accountId, delta] of Object.entries(accountDeltas)) {
             await updateAccountBalance(accountId, delta);
         }
+
+        // Optimistic Update
+        const newMappedTxs: Transaction[] = txsToInsert.map(t => ({
+            id: t.id,
+            date: new Date(t.date),
+            amount: Number(t.amount),
+            description: t.description,
+            type: t.type as 'income' | 'expense' | 'transfer',
+            categoryId: t.category_id,
+            accountId: t.account_id,
+            toAccountId: t.to_account_id,
+            status: t.status,
+            notes: t.notes,
+            relatedTransactionId: t.related_transaction_id,
+            isSystemGenerated: t.is_system_generated,
+            isMaaserable: t.is_maaserable,
+            isDeductible: t.is_deductible
+        }));
+
+        setTransactions(prev => [...newMappedTxs, ...(prev || [])].sort((a, b) => b.date.getTime() - a.date.getTime()));
     };
 
     const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
@@ -249,6 +269,9 @@ export function useTransactions() {
         for (const [accountId, delta] of Object.entries(accountDeltas)) {
             await updateAccountBalance(accountId, delta);
         }
+
+        // Optimistic Update
+        setTransactions(prev => prev?.filter(t => !idsToDelete.includes(t.id)));
     };
 
     const deleteTransactions = async (ids: string[]) => {
