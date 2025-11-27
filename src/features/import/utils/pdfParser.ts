@@ -65,7 +65,8 @@ export async function parsePDF(file: File): Promise<RawTransaction[]> {
                     transactions.push({
                         date: dateStr,
                         description: description,
-                        amount: amount
+                        amount: amount,
+                        originalLine: lineContent
                     });
                 }
             }
