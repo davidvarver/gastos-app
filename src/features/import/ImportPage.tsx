@@ -25,23 +25,36 @@ export function ImportPage() {
             const f = e.target.files[0];
             setFile(f);
 
-            let parsedTransactions: RawTransaction[] = [];
+            try {
+                let parsedTransactions: RawTransaction[] = [];
 
-            if (f.name.toLowerCase().endsWith('.csv')) {
-                const result = await parseCSV(f);
-                parsedTransactions = result.transactions;
-            } else if (f.name.toLowerCase().endsWith('.pdf')) {
-                // Dynamic import to avoid loading PDF.js if not needed
-                const { parsePDF } = await import('./utils/pdfParser');
-                parsedTransactions = await parsePDF(f);
+                if (f.name.toLowerCase().endsWith('.csv')) {
+                    const result = await parseCSV(f);
+                    parsedTransactions = result.transactions;
+                } else if (f.name.toLowerCase().endsWith('.pdf')) {
+                    // Dynamic import to avoid loading PDF.js if not needed
+                    const { parsePDF } = await import('./utils/pdfParser');
+                    parsedTransactions = await parsePDF(f);
+                }
+
+                if (parsedTransactions.length === 0) {
+                    alert("No se encontraron transacciones en el archivo.");
+                    setFile(null);
+                    return;
+                }
+
+                setPreviewData(parsedTransactions.map(t => ({
+                    ...t,
+                    accountId: globalAccountId,
+                    categoryId: globalCategoryId
+                })));
+                setSelectedIndices(new Set());
+            } catch (error: any) {
+                console.error("Import Error:", error);
+                alert(error.message || "Error al procesar el archivo.");
+                setFile(null);
+                setPreviewData([]);
             }
-
-            setPreviewData(parsedTransactions.map(t => ({
-                ...t,
-                accountId: globalAccountId,
-                categoryId: globalCategoryId
-            })));
-            setSelectedIndices(new Set());
         }
     };
 
