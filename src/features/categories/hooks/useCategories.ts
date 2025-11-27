@@ -93,6 +93,17 @@ export function useCategories() {
     };
 
     const deleteCategory = async (id: string) => {
+        // Check usage first
+        const { count, error: countError } = await supabase
+            .from('transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', id);
+
+        if (countError) throw countError;
+        if (count && count > 0) {
+            throw new Error(`No se puede eliminar: Esta categoría se usa en ${count} transacciones.`);
+        }
+
         const { error } = await supabase.from('categories').delete().eq('id', id);
         if (error) throw error;
 

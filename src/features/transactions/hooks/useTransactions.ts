@@ -400,12 +400,83 @@ export function useTransactions() {
         }
 
         // Optimistic Update
-        setTransactions(prev => prev?.map(t => {
-            if (t.id === id) {
-                return { ...t, ...updates, date: updates.date || t.date };
+        // Optimistic Update
+        setTransactions(prev => {
+            if (!prev) return prev;
+
+            // 1. Remove old related transactions (Maaser/Refunds)
+            let newTxs = prev.filter(t => t.relatedTransactionId !== id);
+
+            // 2. Update the main transaction
+            newTxs = newTxs.map(t => {
+                if (t.id === id) {
+                    return { ...t, ...updates, date: updates.date || t.date };
+                }
+                return t;
+            });
+
+            // 3. Add new related transactions (if any were generated)
+            // We need to reconstruct the objects we just inserted.
+            // Since we don't have the full object returned from DB yet in this flow (we inserted blindly),
+            // we construct them from the data we used to insert.
+
+            if (maaserAccount && !newTx.is_system_generated && user) {
+                const isMaaserable = newTx.is_maaserable;
+                const isDeductible = newTx.is_deductible;
+
+                // Re-calculate to see if we added anything (Logic duplicated from above, but needed for UI)
+                if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
+                    const maaserAmount = Number(newTx.amount) * 0.10;
+                    if (maaserAmount > 0) {
+                        // We don't have the ID we generated above easily accessible unless we scoped it better.
+                        // Let's assume we can't perfectly match the ID without refactoring, 
+                        // but for UI purposes, a random ID is fine until refetch.
+                        // Wait, we DO have the ID if we move the generation up or capture it.
+                        // But the scope above is inside the if block. 
+                        // For now, I'll generate a temporary ID for the UI. It will be replaced by Realtime update shortly.
+                        newTxs.push({
+                            id: crypto.randomUUID(), // Temp ID
+                            date: newTx.date,
+                            amount: maaserAmount,
+                            description: `Maaser (10%): ${newTx.description}`,
+                            type: 'transfer',
+                            categoryId: undefined, // System txs usually don't have category or have a special one
+                            accountId: newTx.account_id,
+                            toAccountId: maaserAccount.id,
+                            status: 'cleared',
+                            notes: '',
+                            relatedTransactionId: id,
+                            isSystemGenerated: true,
+                            isMaaserable: false,
+                            isDeductible: false
+                        });
+                    }
+                }
+
+                if (newTx.type === 'expense' && isDeductible === true && newTx.account_id !== maaserAccount.id) {
+                    // ... Refund logic for UI ...
+                    const refundAmount = Number(newTx.amount);
+                    newTxs.push({
+                        id: crypto.randomUUID(),
+                        date: newTx.date,
+                        amount: refundAmount,
+                        description: `Reembolso Maaser: ${newTx.description}`,
+                        type: 'transfer',
+                        categoryId: undefined,
+                        accountId: maaserAccount.id,
+                        toAccountId: newTx.account_id,
+                        status: 'cleared',
+                        notes: '',
+                        relatedTransactionId: id,
+                        isSystemGenerated: true,
+                        isMaaserable: false,
+                        isDeductible: false
+                    });
+                }
             }
-            return t;
-        }));
+
+            return newTxs.sort((a, b) => b.date.getTime() - a.date.getTime());
+        });
     };
 
     return {
