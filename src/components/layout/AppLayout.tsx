@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Wallet, CreditCard, Upload, PieChart, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, CreditCard, Upload, PieChart, Settings, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/transactions', label: 'Transacciones', icon: CreditCard },
+    { href: '/categories', label: 'Categorías', icon: Tag },
     { href: '/import', label: 'Importar', icon: Upload },
     { href: '/accounts', label: 'Bolsas', icon: Wallet },
     { href: '/settings', label: 'Ajustes', icon: Settings },

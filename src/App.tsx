@@ -3,6 +3,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { AccountsPage } from './features/accounts/AccountsPage';
 import { TransactionsPage } from './features/transactions/TransactionsPage';
+import { CategoriesPage } from './features/categories/CategoriesPage';
 import { ImportPage } from './features/import/ImportPage';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { LoginPage } from './features/auth/LoginPage';
@@ -31,6 +32,7 @@ function AppContent() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/import" element={<ImportPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

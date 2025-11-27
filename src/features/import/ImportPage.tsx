@@ -24,8 +24,19 @@ export function ImportPage() {
         if (e.target.files?.[0]) {
             const f = e.target.files[0];
             setFile(f);
-            const result = await parseCSV(f);
-            setPreviewData(result.transactions.map(t => ({
+
+            let parsedTransactions: RawTransaction[] = [];
+
+            if (f.name.toLowerCase().endsWith('.csv')) {
+                const result = await parseCSV(f);
+                parsedTransactions = result.transactions;
+            } else if (f.name.toLowerCase().endsWith('.pdf')) {
+                // Dynamic import to avoid loading PDF.js if not needed
+                const { parsePDF } = await import('./utils/pdfParser');
+                parsedTransactions = await parsePDF(f);
+            }
+
+            setPreviewData(parsedTransactions.map(t => ({
                 ...t,
                 accountId: globalAccountId,
                 categoryId: globalCategoryId
@@ -163,7 +174,7 @@ export function ImportPage() {
                     <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:bg-slate-800/50 transition-colors group">
                         <input
                             type="file"
-                            accept=".csv"
+                            accept=".csv,.pdf"
                             onChange={handleFileChange}
                             className="hidden"
                             id="file-upload"
@@ -172,7 +183,7 @@ export function ImportPage() {
                             <div className="p-4 bg-slate-800 rounded-full group-hover:bg-slate-700 transition-colors">
                                 <Upload className="w-8 h-8 text-slate-400" />
                             </div>
-                            <span className="font-medium text-slate-200">Click para subir CSV</span>
+                            <span className="font-medium text-slate-200">Click para subir CSV o PDF</span>
                             <span className="text-xs text-slate-500">{file ? file.name : "O arrastra aquí"}</span>
                         </label>
                     </div>
