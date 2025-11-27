@@ -65,14 +65,30 @@ export function useAccounts() {
             type: account.type,
             currency: account.currency,
             initial_balance: account.initialBalance,
-            current_balance: account.initialBalance, // Start with initial
+            current_balance: account.initialBalance,
             color: account.color,
             default_income_maaserable: account.defaultIncomeMaaserable,
             default_expense_deductible: account.defaultExpenseDeductible
         };
 
-        const { error } = await supabase.from('accounts').insert([dbAccount]);
+        const { data, error } = await supabase.from('accounts').insert([dbAccount]).select().single();
         if (error) throw error;
+
+        // Optimistic Update
+        if (data) {
+            const newAccount: Account = {
+                id: data.id,
+                name: data.name,
+                type: data.type,
+                currency: data.currency,
+                initialBalance: Number(data.initial_balance),
+                currentBalance: Number(data.current_balance),
+                color: data.color,
+                defaultIncomeMaaserable: data.default_income_maaserable,
+                defaultExpenseDeductible: data.default_expense_deductible
+            };
+            setAccounts(prev => [...(prev || []), newAccount].sort((a, b) => a.name.localeCompare(b.name)));
+        }
     };
 
     const updateAccount = async (id: string, updates: Partial<Account>) => {
@@ -88,11 +104,17 @@ export function useAccounts() {
 
         const { error } = await supabase.from('accounts').update(dbUpdates).eq('id', id);
         if (error) throw error;
+
+        // Optimistic Update
+        setAccounts(prev => prev?.map(a => a.id === id ? { ...a, ...updates } : a));
     };
 
     const deleteAccount = async (id: string) => {
         const { error } = await supabase.from('accounts').delete().eq('id', id);
         if (error) throw error;
+
+        // Optimistic Update
+        setAccounts(prev => prev?.filter(a => a.id !== id));
     };
 
     return {
