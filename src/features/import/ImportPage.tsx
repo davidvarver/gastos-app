@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, AlertCircle, Check, X, CheckSquare, Square, Edit2 } from 'lucide-react';
+import { Upload, CheckSquare, Square } from 'lucide-react';
 import { parseCSV, type RawTransaction } from './utils/parsers';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
@@ -31,10 +31,6 @@ export function ImportPage() {
                 if (f.name.toLowerCase().endsWith('.csv')) {
                     const result = await parseCSV(f);
                     parsedTransactions = result.transactions;
-                } else if (f.name.toLowerCase().endsWith('.pdf')) {
-                    // Dynamic import to avoid loading PDF.js if not needed
-                    const { parsePDF } = await import('./utils/pdfParser');
-                    parsedTransactions = await parsePDF(f);
                 }
 
                 if (parsedTransactions.length === 0) {
@@ -187,7 +183,7 @@ export function ImportPage() {
                     <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:bg-slate-800/50 transition-colors group">
                         <input
                             type="file"
-                            accept=".csv,.pdf"
+                            accept=".csv"
                             onChange={handleFileChange}
                             className="hidden"
                             id="file-upload"
@@ -196,7 +192,7 @@ export function ImportPage() {
                             <div className="p-4 bg-slate-800 rounded-full group-hover:bg-slate-700 transition-colors">
                                 <Upload className="w-8 h-8 text-slate-400" />
                             </div>
-                            <span className="font-medium text-slate-200">Click para subir CSV o PDF</span>
+                            <span className="font-medium text-slate-200">Click para subir CSV</span>
                             <span className="text-xs text-slate-500">{file ? file.name : "O arrastra aquí"}</span>
                         </label>
                     </div>
