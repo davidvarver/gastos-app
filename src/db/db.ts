@@ -56,6 +56,18 @@ export interface MonthlySnapshot {
     createdAt: Date;
 }
 
+export interface RecurringTransaction {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense' | 'transfer';
+    categoryId?: string;
+    accountId: string;
+    toAccountId?: string;
+    dayOfMonth: number; // 1-31
+    active: boolean;
+}
+
 // Database Class
 class ExpenseDB extends Dexie {
     accounts!: EntityTable<Account, 'id'>;
