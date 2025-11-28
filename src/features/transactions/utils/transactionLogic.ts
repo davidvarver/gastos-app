@@ -1,7 +1,7 @@
 import { type Transaction } from '@/db/db';
 
 export interface TransactionEffect {
-    transactionsToInsert: any[];
+    txsToInsert: any[];
     accountDeltas: Record<string, number>;
 }
 
