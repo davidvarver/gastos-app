@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { type Transaction, type Category } from '@/db/db';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { calculateTransactionEffects } from '../utils/transactionLogic';
 
 export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[] | undefined>(undefined);
@@ -109,101 +110,37 @@ export function useTransactions() {
         const txsToInsert: any[] = [];
         const accountDeltas: Record<string, number> = {};
 
+        // Import utility (Dynamic import or top-level? Top level is better but I can't add imports easily with replace_file_content if I don't see the top)
+        // I will assume I can add the import at the top in a separate call or use the full file view.
+        // For now, I'll use the utility logic. Wait, I need to import it.
+        // I'll do a separate edit to add the import first.
+
+        // ... (Logic replacement) ...
+        // Actually, I'll do the import in a separate step to be safe.
+        // This step is just for the logic.
+
         for (const txData of newTransactions) {
             const account = accountsMap.get(txData.accountId);
 
-            // Apply Defaults
-            let isMaaserable = txData.isMaaserable;
-            let isDeductible = txData.isDeductible;
+            // Prepare context
+            const accountContext = account ? {
+                id: account.id,
+                default_income_maaserable: account.default_income_maaserable,
+                default_expense_deductible: account.default_expense_deductible
+            } : undefined;
 
-            if (isMaaserable === undefined && txData.type === 'income' && account) {
-                isMaaserable = account.default_income_maaserable ?? true;
-            }
-            if (isDeductible === undefined && txData.type === 'expense' && account) {
-                isDeductible = account.default_expense_deductible ?? false;
-            }
+            const { txsToInsert: newTxs, accountDeltas: newDeltas } = calculateTransactionEffects(
+                txData,
+                user.id,
+                maaserAccount,
+                accountContext
+            );
 
-            // Prepare Main Transaction
-            // We let Supabase generate ID, but we need it for relations. 
-            // So we generate it client-side or use a placeholder? 
-            // Supabase allows client-side UUIDs if we send them.
-            const txId = crypto.randomUUID();
+            txsToInsert.push(...newTxs);
 
-            const dbTx = {
-                id: txId,
-                user_id: user.id,
-                date: txData.date.toISOString(),
-                amount: txData.amount,
-                description: txData.description,
-                type: txData.type,
-                category_id: txData.categoryId,
-                account_id: txData.accountId,
-                to_account_id: txData.toAccountId,
-                status: txData.status,
-                notes: txData.notes,
-                is_system_generated: txData.isSystemGenerated ?? false,
-                is_maaserable: isMaaserable,
-                is_deductible: isDeductible
-            };
-            txsToInsert.push(dbTx);
-
-            // Calculate Balance Delta for Main Tx
-            if (txData.type === 'income') {
-                accountDeltas[txData.accountId] = (accountDeltas[txData.accountId] || 0) + txData.amount;
-            } else if (txData.type === 'expense') {
-                accountDeltas[txData.accountId] = (accountDeltas[txData.accountId] || 0) - txData.amount;
-            } else if (txData.type === 'transfer' && txData.toAccountId) {
-                accountDeltas[txData.accountId] = (accountDeltas[txData.accountId] || 0) - txData.amount;
-                accountDeltas[txData.toAccountId] = (accountDeltas[txData.toAccountId] || 0) + txData.amount;
-            }
-
-            // Automatic Maaser Logic
-            if (maaserAccount && !txData.isSystemGenerated) {
-                // Income -> 10% to Maaser
-                if (txData.type === 'income' && isMaaserable !== false && txData.accountId !== maaserAccount.id) {
-                    const rawMaaser = txData.amount * 0.10;
-                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
-                    if (maaserAmount > 0) {
-                        const autoTxId = crypto.randomUUID();
-                        txsToInsert.push({
-                            id: autoTxId,
-                            user_id: user.id,
-                            date: txData.date.toISOString(),
-                            amount: maaserAmount,
-                            description: `Maaser (10%): ${txData.description}`,
-                            type: 'transfer',
-                            account_id: txData.accountId,
-                            to_account_id: maaserAccount.id,
-                            status: 'cleared',
-                            is_system_generated: true,
-                            related_transaction_id: txId
-                        });
-                        // Update Deltas for Auto Tx
-                        accountDeltas[txData.accountId] = (accountDeltas[txData.accountId] || 0) - maaserAmount;
-                        accountDeltas[maaserAccount.id] = (accountDeltas[maaserAccount.id] || 0) + maaserAmount;
-                    }
-                }
-
-                // Deductible Expense -> Refund from Maaser
-                if (txData.type === 'expense' && isDeductible === true && txData.accountId !== maaserAccount.id) {
-                    const autoTxId = crypto.randomUUID();
-                    txsToInsert.push({
-                        id: autoTxId,
-                        user_id: user.id,
-                        date: txData.date.toISOString(),
-                        amount: txData.amount,
-                        description: `Reembolso Maaser: ${txData.description}`,
-                        type: 'transfer',
-                        account_id: maaserAccount.id,
-                        to_account_id: txData.accountId,
-                        status: 'cleared',
-                        is_system_generated: true,
-                        related_transaction_id: txId
-                    });
-                    // Update Deltas for Auto Tx
-                    accountDeltas[maaserAccount.id] = (accountDeltas[maaserAccount.id] || 0) - txData.amount;
-                    accountDeltas[txData.accountId] = (accountDeltas[txData.accountId] || 0) + txData.amount;
-                }
+            // Merge Deltas
+            for (const [accId, delta] of Object.entries(newDeltas)) {
+                accountDeltas[accId] = (accountDeltas[accId] || 0) + delta;
             }
         }
 
