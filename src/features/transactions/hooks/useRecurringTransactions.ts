@@ -130,8 +130,6 @@ export function useRecurringTransactions() {
             accountId: item.accountId,
             toAccountId: item.toAccountId,
             status: 'cleared' as const,
-            isSystemGenerated: true, // Mark as system generated so we know it came from here? Or maybe not, so user can edit freely. Let's say false for now to treat as normal manual entry.
-            // Actually, let's keep it false so Maaser logic applies naturally if configured.
             isSystemGenerated: false
         }));
 
