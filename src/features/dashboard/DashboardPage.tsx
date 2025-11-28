@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import { ChartsContainer } from './components/ChartsContainer';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -9,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 export function DashboardPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const { income, expense, net, maaser, chartData, isLoading } = useDashboard(currentDate);
+    const { income, expense, net, maaser, isLoading } = useDashboard(currentDate);
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
@@ -84,56 +83,15 @@ export function DashboardPage() {
                             <div className="text-sm text-violet-200">Maaser (10%)</div>
                             <div className="text-xs text-violet-400/60">Sugerido para donar</div>
                         </div>
-                        <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={5}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                            {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                        </Pie>
-                        <Tooltip
-                            formatter={(value: number) => formatCurrency(value)}
-                            contentStyle={{
-                                backgroundColor: '#1e293b',
-                                borderColor: '#334155',
-                                borderRadius: '12px',
-                                color: '#fff'
-                            }}
-                            itemStyle={{ color: '#fff' }}
-                        />
-                        <Legend />
-                    </PieChart>
-                </ResponsiveContainer>
-            ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
-                <div className="p-4 bg-slate-800/50 rounded-full">
-                    <PieChart className="w-8 h-8 opacity-50" />
+                    </div>
+                    <div className="text-xl font-bold text-violet-300">{formatCurrency(maaser)}</div>
                 </div>
-                <p>No hay gastos este mes</p>
-            </div>
-                    )}
-        </div>
+            )}
 
-                {/* List Details */ }
-    <div className="mt-6 space-y-3">
-        {chartData.map((item, i) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full shadow-[0_0_10px]" style={{ backgroundColor: item.color, boxShadow: `0 0 10px ${item.color}` }} />
-                    <span className="text-slate-300 font-medium">{item.name}</span>
-                </div>
-                <span className="text-white font-semibold">{formatCurrency(item.value)}</span>
-            </div>
-        ))}
-    </div>
-            </div >
-        </div >
+            {/* Charts Section */}
+            <ChartsContainer />
+
+            {/* Recent Transactions Placeholder or other content could go here */}
+        </div>
     );
 }
