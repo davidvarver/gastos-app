@@ -161,7 +161,8 @@ export function useTransactions() {
             if (maaserAccount && !txData.isSystemGenerated) {
                 // Income -> 10% to Maaser
                 if (txData.type === 'income' && isMaaserable !== false && txData.accountId !== maaserAccount.id) {
-                    const maaserAmount = txData.amount * 0.10;
+                    const rawMaaser = txData.amount * 0.10;
+                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
                     if (maaserAmount > 0) {
                         const autoTxId = crypto.randomUUID();
                         txsToInsert.push({
@@ -356,7 +357,8 @@ export function useTransactions() {
 
                 // Income -> 10% to Maaser
                 if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
-                    const maaserAmount = Number(newTx.amount) * 0.10;
+                    const rawMaaser = Number(newTx.amount) * 0.10;
+                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
                     if (maaserAmount > 0) {
                         const autoTxId = crypto.randomUUID();
                         const maaserTx = {
@@ -428,7 +430,8 @@ export function useTransactions() {
 
                 // Re-calculate to see if we added anything (Logic duplicated from above, but needed for UI)
                 if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
-                    const maaserAmount = Number(newTx.amount) * 0.10;
+                    const rawMaaser = Number(newTx.amount) * 0.10;
+                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
                     if (maaserAmount > 0) {
                         // We don't have the ID we generated above easily accessible unless we scoped it better.
                         // Let's assume we can't perfectly match the ID without refactoring, 
