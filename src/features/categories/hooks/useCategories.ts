@@ -112,17 +112,72 @@ export function useCategories() {
 
     const addSubcategory = async (categoryId: string, name: string) => {
         if (!user) return;
-        const { error } = await supabase.from('subcategories').insert([{
+
+        // Optimistic Update (Temporary ID)
+        const tempId = crypto.randomUUID();
+        const tempSub: Subcategory = {
+            id: tempId,
+            categoryId: categoryId,
+            name: name,
+            type: undefined // Default
+        };
+
+        setCategories(prev => prev?.map(c => {
+            if (c.id === categoryId) {
+                return {
+                    ...c,
+                    subcategories: [...(c.subcategories || []), tempSub].sort((a, b) => a.name.localeCompare(b.name))
+                };
+            }
+            return c;
+        }));
+
+        const { data, error } = await supabase.from('subcategories').insert([{
             user_id: user.id,
             category_id: categoryId,
             name: name
-        }]);
-        if (error) throw error;
+        }]).select().single();
+
+        if (error) {
+            // Rollback
+            setCategories(prev => prev?.map(c => {
+                if (c.id === categoryId) {
+                    return {
+                        ...c,
+                        subcategories: c.subcategories?.filter(s => s.id !== tempId)
+                    };
+                }
+                return c;
+            }));
+            throw error;
+        }
+
+        // Replace Temp ID with Real ID
+        setCategories(prev => prev?.map(c => {
+            if (c.id === categoryId) {
+                return {
+                    ...c,
+                    subcategories: c.subcategories?.map(s => s.id === tempId ? { ...s, id: data.id } : s)
+                };
+            }
+            return c;
+        }));
     };
 
     const deleteSubcategory = async (id: string) => {
+        // Optimistic Update
+        setCategories(prev => prev?.map(c => ({
+            ...c,
+            subcategories: c.subcategories?.filter(s => s.id !== id)
+        })));
+
         const { error } = await supabase.from('subcategories').delete().eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            // Rollback (Fetch to restore)
+            fetchCategories();
+            throw error;
+        }
     };
 
     return {
