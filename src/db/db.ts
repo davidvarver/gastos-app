@@ -16,10 +16,18 @@ export interface Account {
 export interface Category {
     id: string;
     name: string;
-    type: 'income' | 'expense';
+    type?: 'income' | 'expense'; // Now optional
     color: string;
     icon?: string;
     isSystem?: boolean; // e.g. Maaser, Jomesh
+    subcategories?: Subcategory[]; // For UI convenience
+}
+
+export interface Subcategory {
+    id: string;
+    categoryId: string;
+    name: string;
+    type?: 'income' | 'expense';
 }
 
 export interface Transaction {

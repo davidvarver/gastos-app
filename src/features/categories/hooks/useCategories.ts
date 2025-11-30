@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { type Category } from '@/db/db';
+import { type Category, type Subcategory } from '@/db/db';
 import { useAuth } from '@/features/auth/AuthProvider';
 
 export function useCategories() {
@@ -12,20 +12,37 @@ export function useCategories() {
         if (!user) return;
 
         try {
-            const { data, error } = await supabase
+            // Fetch Categories
+            const { data: catsData, error: catsError } = await supabase
                 .from('categories')
                 .select('*')
                 .order('name');
 
-            if (error) throw error;
+            if (catsError) throw catsError;
 
-            const mappedCategories: Category[] = data.map(c => ({
+            // Fetch Subcategories
+            const { data: subData, error: subError } = await supabase
+                .from('subcategories')
+                .select('*')
+                .order('name');
+
+            if (subError) throw subError;
+
+            const mappedCategories: Category[] = catsData.map(c => ({
                 id: c.id,
                 name: c.name,
-                type: c.type as 'income' | 'expense',
+                type: c.type as 'income' | 'expense' | undefined,
                 color: c.color,
                 icon: c.icon,
-                isSystem: c.is_system
+                isSystem: c.is_system,
+                subcategories: subData
+                    .filter(s => s.category_id === c.id)
+                    .map(s => ({
+                        id: s.id,
+                        categoryId: s.category_id,
+                        name: s.name,
+                        type: s.type as 'income' | 'expense' | undefined
+                    }))
             }));
 
             setCategories(mappedCategories);
@@ -42,6 +59,7 @@ export function useCategories() {
         const channel = supabase
             .channel('categories_crud_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, fetchCategories)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'subcategories' }, fetchCategories)
             .subscribe();
 
         return () => {
@@ -49,47 +67,31 @@ export function useCategories() {
         };
     }, [user]);
 
-    const addCategory = async (category: Omit<Category, 'id' | 'isSystem'>) => {
+    const addCategory = async (category: Omit<Category, 'id' | 'isSystem' | 'subcategories'>) => {
         if (!user) return;
 
         const dbCategory = {
             user_id: user.id,
             name: category.name,
-            type: category.type,
+            type: category.type || null, // Handle optional type
             color: category.color,
             icon: category.icon,
             is_system: false
         };
 
-        const { data, error } = await supabase.from('categories').insert([dbCategory]).select().single();
+        const { error } = await supabase.from('categories').insert([dbCategory]);
         if (error) throw error;
-
-        // Optimistic Update
-        if (data) {
-            const newCat: Category = {
-                id: data.id,
-                name: data.name,
-                type: data.type as 'income' | 'expense',
-                color: data.color,
-                icon: data.icon,
-                isSystem: data.is_system
-            };
-            setCategories(prev => [...(prev || []), newCat].sort((a, b) => a.name.localeCompare(b.name)));
-        }
     };
 
     const updateCategory = async (id: string, updates: Partial<Category>) => {
         const dbUpdates: any = {};
         if (updates.name) dbUpdates.name = updates.name;
-        if (updates.type) dbUpdates.type = updates.type;
+        if (updates.type !== undefined) dbUpdates.type = updates.type || null; // Allow clearing type
         if (updates.color) dbUpdates.color = updates.color;
         if (updates.icon) dbUpdates.icon = updates.icon;
 
         const { error } = await supabase.from('categories').update(dbUpdates).eq('id', id);
         if (error) throw error;
-
-        // Optimistic Update
-        setCategories(prev => prev?.map(c => c.id === id ? { ...c, ...updates } : c));
     };
 
     const deleteCategory = async (id: string) => {
@@ -106,9 +108,21 @@ export function useCategories() {
 
         const { error } = await supabase.from('categories').delete().eq('id', id);
         if (error) throw error;
+    };
 
-        // Optimistic Update
-        setCategories(prev => prev?.filter(c => c.id !== id));
+    const addSubcategory = async (categoryId: string, name: string) => {
+        if (!user) return;
+        const { error } = await supabase.from('subcategories').insert([{
+            user_id: user.id,
+            category_id: categoryId,
+            name: name
+        }]);
+        if (error) throw error;
+    };
+
+    const deleteSubcategory = async (id: string) => {
+        const { error } = await supabase.from('subcategories').delete().eq('id', id);
+        if (error) throw error;
     };
 
     return {
@@ -116,6 +130,8 @@ export function useCategories() {
         addCategory,
         updateCategory,
         deleteCategory,
+        addSubcategory,
+        deleteSubcategory,
         isLoading: loading,
     };
 }

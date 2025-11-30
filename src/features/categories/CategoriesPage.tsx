@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useCategories } from './hooks/useCategories';
-import { Plus, Trash2, Edit2, Tag } from 'lucide-react';
+import { Plus, Trash2, Edit2, Tag, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function CategoriesPage() {
-    const { categories, addCategory, updateCategory, deleteCategory, isLoading } = useCategories();
+    const { categories, addCategory, updateCategory, deleteCategory, addSubcategory, deleteSubcategory, isLoading } = useCategories();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any>(null);
 
     // Form State
     const [name, setName] = useState('');
-    const [type, setType] = useState<'income' | 'expense'>('expense');
+    const [type, setType] = useState<'income' | 'expense' | undefined>(undefined);
     const [color, setColor] = useState('#3b82f6');
+
+    // Subcategory State
+    const [newSubcatName, setNewSubcatName] = useState('');
+    const [addingSubcatTo, setAddingSubcatTo] = useState<string | null>(null);
 
     const handleOpenModal = (category?: any) => {
         if (category) {
@@ -22,7 +26,7 @@ export function CategoriesPage() {
         } else {
             setEditingCategory(null);
             setName('');
-            setType('expense');
+            setType(undefined); // Default to no type
             setColor('#3b82f6');
         }
         setIsModalOpen(true);
@@ -49,6 +53,18 @@ export function CategoriesPage() {
         }
     };
 
+    const handleAddSubcategory = async (categoryId: string) => {
+        if (!newSubcatName.trim()) return;
+        try {
+            await addSubcategory(categoryId, newSubcatName);
+            setNewSubcatName('');
+            setAddingSubcatTo(null);
+        } catch (error) {
+            console.error(error);
+            alert('Error al agregar subcategoría');
+        }
+    };
+
     if (isLoading) return <div className="p-8 text-white">Cargando categorías...</div>;
 
     return (
@@ -69,41 +85,89 @@ export function CategoriesPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {categories?.map((cat) => (
-                    <div key={cat.id} className="bg-[#151e32] border border-[#1e293b] rounded-xl p-4 flex items-center justify-between group hover:border-slate-600 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                                style={{ backgroundColor: cat.color }}
-                            >
-                                <Tag className="w-5 h-5" />
+                    <div key={cat.id} className="bg-[#151e32] border border-[#1e293b] rounded-xl p-4 flex flex-col gap-4 group hover:border-slate-600 transition-colors">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                                    style={{ backgroundColor: cat.color }}
+                                >
+                                    <Tag className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-white">{cat.name}</h3>
+                                    {cat.type && (
+                                        <span className={cn(
+                                            "text-xs px-2 py-0.5 rounded-full",
+                                            cat.type === 'income' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                                        )}>
+                                            {cat.type === 'income' ? 'Ingreso' : 'Gasto'}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-bold text-white">{cat.name}</h3>
-                                <span className={cn(
-                                    "text-xs px-2 py-0.5 rounded-full",
-                                    cat.type === 'income' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                                )}>
-                                    {cat.type === 'income' ? 'Ingreso' : 'Gasto'}
-                                </span>
-                            </div>
+
+                            {!cat.isSystem && (
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => handleOpenModal(cat)}
+                                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(cat.id)}
+                                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {!cat.isSystem && (
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Subcategories Section */}
+                        <div className="pl-12 space-y-2">
+                            {cat.subcategories?.map(sub => (
+                                <div key={sub.id} className="flex items-center justify-between text-sm text-slate-400 hover:text-white group/sub">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                                        {sub.name}
+                                    </div>
+                                    <button
+                                        onClick={() => deleteSubcategory(sub.id)}
+                                        className="opacity-0 group-hover/sub:opacity-100 text-red-400 hover:bg-red-500/10 p-1 rounded"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {addingSubcatTo === cat.id ? (
+                                <div className="flex items-center gap-2 mt-2">
+                                    <input
+                                        autoFocus
+                                        className="bg-[#0b1121] border border-slate-700 rounded px-2 py-1 text-sm text-white w-full outline-none focus:border-[#4ade80]"
+                                        placeholder="Nombre subcategoría..."
+                                        value={newSubcatName}
+                                        onChange={e => setNewSubcatName(e.target.value)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') handleAddSubcategory(cat.id);
+                                            if (e.key === 'Escape') setAddingSubcatTo(null);
+                                        }}
+                                    />
+                                    <button onClick={() => handleAddSubcategory(cat.id)} className="text-[#4ade80] hover:bg-[#4ade80]/10 p-1 rounded">
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ) : (
                                 <button
-                                    onClick={() => handleOpenModal(cat)}
-                                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"
+                                    onClick={() => { setAddingSubcatTo(cat.id); setNewSubcatName(''); }}
+                                    className="text-xs text-slate-500 hover:text-[#4ade80] flex items-center gap-1 mt-1 transition-colors"
                                 >
-                                    <Edit2 className="w-4 h-4" />
+                                    <Plus className="w-3 h-3" /> Agregar subcategoría
                                 </button>
-                                <button
-                                    onClick={() => handleDelete(cat.id)}
-                                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -127,11 +191,13 @@ export function CategoriesPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-1">Tipo</label>
+                                <label className="block text-sm font-medium text-slate-400 mb-1">
+                                    Tipo <span className="text-slate-600 font-normal">(Opcional)</span>
+                                </label>
                                 <div className="flex gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setType('expense')}
+                                        onClick={() => setType(type === 'expense' ? undefined : 'expense')}
                                         className={cn(
                                             "flex-1 py-2 rounded-lg text-sm font-medium transition-colors border",
                                             type === 'expense'
@@ -143,7 +209,7 @@ export function CategoriesPage() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setType('income')}
+                                        onClick={() => setType(type === 'income' ? undefined : 'income')}
                                         className={cn(
                                             "flex-1 py-2 rounded-lg text-sm font-medium transition-colors border",
                                             type === 'income'
@@ -154,6 +220,9 @@ export function CategoriesPage() {
                                         Ingreso
                                     </button>
                                 </div>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Si no seleccionas tipo, esta categoría aparecerá en ambos selectores.
+                                </p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-400 mb-1">Color</label>
