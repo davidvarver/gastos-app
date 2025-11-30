@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, CheckSquare, Square } from 'lucide-react';
+import { Upload, CheckSquare, Square, Sparkles } from 'lucide-react';
 import { parseCSV, type RawTransaction } from './utils/parsers';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
@@ -18,7 +18,7 @@ export function ImportPage() {
     const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
 
     const { accounts } = useAccounts();
-    const { addTransactions, categories } = useTransactions();
+    const { addTransactions, categories, transactions } = useTransactions();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.[0]) {
@@ -113,6 +113,47 @@ export function ImportPage() {
             newData[index] = { ...newData[index], [field]: value };
             return newData;
         });
+    };
+
+    const handleAutoCategorize = () => {
+        if (!transactions || transactions.length === 0) {
+            alert("No hay historial suficiente para aprender.");
+            return;
+        }
+
+        let matchCount = 0;
+        setPreviewData(prev => prev.map(row => {
+            // Skip if already fully categorized (optional, but maybe user wants to overwrite?)
+            // Let's overwrite only if empty or if user explicitly clicked "Auto-Complete" implying they want help.
+            // Actually, let's prioritize filling empty spots, but maybe overwrite is better if they clicked the magic button.
+            // Let's fill ONLY if empty for now to be safe, or maybe overwrite everything?
+            // "Auto-Completar" implies filling gaps.
+            // But if I imported and everything is empty, it fills all.
+            // If I set a global default, they are not empty.
+            // So if I set global default "Personal", then clicked auto, I might want "Netflix" to become "Entertainment".
+            // So overwrite is probably expected for "Smart" features.
+
+            // Find most recent match
+            const match = transactions.find(t =>
+                t.description.toLowerCase().trim() === row.description.toLowerCase().trim()
+            );
+
+            if (match) {
+                matchCount++;
+                return {
+                    ...row,
+                    categoryId: match.categoryId || row.categoryId,
+                    accountId: match.accountId || row.accountId
+                };
+            }
+            return row;
+        }));
+
+        if (matchCount > 0) {
+            alert(`¡Magia! ✨ Se han categorizado ${matchCount} transacciones basadas en tu historial.`);
+        } else {
+            alert("No se encontraron coincidencias en tu historial.");
+        }
     };
 
     const handleImport = async () => {
@@ -254,6 +295,20 @@ export function ImportPage() {
                         >
                             Confirmar Importación
                         </button>
+
+                        <div className="pt-4 border-t border-slate-700/50">
+                            <button
+                                onClick={handleAutoCategorize}
+                                disabled={!previewData.length || !transactions}
+                                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                Auto-Completar con IA (Historial)
+                            </button>
+                            <p className="text-xs text-slate-500 text-center mt-2">
+                                Usa tu historial para adivinar categorías y cuentas.
+                            </p>
+                        </div>
                     </div>
                 </div>
 
