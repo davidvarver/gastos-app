@@ -57,6 +57,15 @@ export function useRecurringTransactions() {
     const addRecurring = async (item: Omit<RecurringTransaction, 'id'>) => {
         if (!user) return;
 
+        const tempId = crypto.randomUUID();
+        const newItem: RecurringTransaction = {
+            id: tempId,
+            ...item
+        };
+
+        // Optimistic Update
+        setRecurring(prev => [...(prev || []), newItem].sort((a, b) => a.dayOfMonth - b.dayOfMonth));
+
         const dbItem = {
             user_id: user.id,
             description: item.description,
@@ -69,28 +78,52 @@ export function useRecurringTransactions() {
             active: item.active
         };
 
-        const { error } = await supabase.from('recurring_transactions').insert([dbItem]);
-        if (error) throw error;
+        const { data, error } = await supabase.from('recurring_transactions').insert([dbItem]).select().single();
+
+        if (error) {
+            // Rollback
+            setRecurring(prev => prev?.filter(r => r.id !== tempId));
+            throw error;
+        }
+
+        // Replace Temp ID
+        setRecurring(prev => prev?.map(r => r.id === tempId ? { ...r, id: data.id } : r));
     };
 
     const updateRecurring = async (id: string, updates: Partial<RecurringTransaction>) => {
+        // Optimistic Update
+        setRecurring(prev => prev?.map(r => r.id === id ? { ...r, ...updates } : r));
+
         const dbUpdates: any = {};
         if (updates.description) dbUpdates.description = updates.description;
         if (updates.amount) dbUpdates.amount = updates.amount;
         if (updates.type) dbUpdates.type = updates.type;
-        if (updates.categoryId) dbUpdates.category_id = updates.categoryId;
+        if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
         if (updates.accountId) dbUpdates.account_id = updates.accountId;
-        if (updates.toAccountId) dbUpdates.to_account_id = updates.toAccountId;
+        if (updates.toAccountId !== undefined) dbUpdates.to_account_id = updates.toAccountId || null;
         if (updates.dayOfMonth) dbUpdates.day_of_month = updates.dayOfMonth;
         if (updates.active !== undefined) dbUpdates.active = updates.active;
 
         const { error } = await supabase.from('recurring_transactions').update(dbUpdates).eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            // Rollback
+            fetchRecurring();
+            throw error;
+        }
     };
 
     const deleteRecurring = async (id: string) => {
+        // Optimistic Delete
+        setRecurring(prev => prev?.filter(r => r.id !== id));
+
         const { error } = await supabase.from('recurring_transactions').delete().eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            // Rollback
+            fetchRecurring();
+            throw error;
+        }
     };
 
     const generateForMonth = async (month: Date) => {
