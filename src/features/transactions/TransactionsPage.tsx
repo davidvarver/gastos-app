@@ -132,6 +132,7 @@ export function TransactionsPage() {
             date: new Date(editingTx.date),
             accountId: editingTx.accountId,
             categoryId: editingTx.categoryId,
+            subcategoryId: editingTx.subcategoryId,
             type: editingTx.type,
             isMaaserable: editingTx.isMaaserable,
             isDeductible: editingTx.isDeductible
@@ -334,12 +335,19 @@ export function TransactionsPage() {
                                     <td className="px-6 py-4 font-medium text-white">{tx.description}</td>
                                     <td className="px-6 py-4">
                                         {category ? (
-                                            <span
-                                                className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
-                                                style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
-                                            >
-                                                {category.name}
-                                            </span>
+                                            <div className="flex flex-col items-start">
+                                                <span
+                                                    className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                                    style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
+                                                >
+                                                    {category.name}
+                                                </span>
+                                                {tx.subcategoryId && (
+                                                    <span className="text-[10px] text-slate-400 mt-1 ml-1">
+                                                        {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
+                                                    </span>
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className="text-slate-500 italic text-xs">Sin categoría</span>
                                         )}
@@ -436,18 +444,34 @@ export function TransactionsPage() {
                                 </select>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-400 uppercase">Categoría</label>
-                                <select
-                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                    value={editingTx.categoryId || ''}
-                                    onChange={e => setEditingTx({ ...editingTx, categoryId: e.target.value })}
-                                >
-                                    <option value="">Sin Categoría</option>
-                                    {categories?.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-slate-400 uppercase">Categoría</label>
+                                    <select
+                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
+                                        value={editingTx.categoryId || ''}
+                                        onChange={e => setEditingTx({ ...editingTx, categoryId: e.target.value, subcategoryId: '' })}
+                                    >
+                                        <option value="">Sin Categoría</option>
+                                        {categories?.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-slate-400 uppercase">Subcategoría</label>
+                                    <select
+                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
+                                        value={editingTx.subcategoryId || ''}
+                                        onChange={e => setEditingTx({ ...editingTx, subcategoryId: e.target.value })}
+                                        disabled={!editingTx.categoryId}
+                                    >
+                                        <option value="">-</option>
+                                        {categories?.find(c => c.id === editingTx.categoryId)?.subcategories?.map(sub => (
+                                            <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Maaser Toggles */}

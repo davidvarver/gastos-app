@@ -29,6 +29,7 @@ export function useTransactions() {
                 description: t.description,
                 type: t.type as 'income' | 'expense' | 'transfer',
                 categoryId: t.category_id,
+                subcategoryId: t.subcategory_id,
                 accountId: t.account_id,
                 toAccountId: t.to_account_id,
                 status: t.status,
@@ -40,12 +41,12 @@ export function useTransactions() {
             }));
             setTransactions(mappedTransactions);
 
-            // Fetch Categories
-            const { data: catData, error: catError } = await supabase
-                .from('categories')
-                .select('*');
-
+            // Fetch Categories & Subcategories
+            const { data: catData, error: catError } = await supabase.from('categories').select('*');
             if (catError) throw catError;
+
+            const { data: subData, error: subError } = await supabase.from('subcategories').select('*');
+            if (subError) throw subError;
 
             const mappedCategories: Category[] = catData.map(c => ({
                 id: c.id,
@@ -53,7 +54,15 @@ export function useTransactions() {
                 type: c.type as 'income' | 'expense',
                 color: c.color,
                 icon: c.icon,
-                isSystem: c.is_system
+                isSystem: c.is_system,
+                subcategories: subData
+                    .filter(s => s.category_id === c.id)
+                    .map(s => ({
+                        id: s.id,
+                        categoryId: s.category_id,
+                        name: s.name,
+                        type: s.type as 'income' | 'expense' | undefined
+                    }))
             }));
             setCategories(mappedCategories);
 
@@ -75,6 +84,7 @@ export function useTransactions() {
         const catChannel = supabase
             .channel('categories_changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'subcategories' }, fetchData)
             .subscribe();
 
         return () => {
@@ -110,15 +120,6 @@ export function useTransactions() {
         const txsToInsert: any[] = [];
         const accountDeltas: Record<string, number> = {};
 
-        // Import utility (Dynamic import or top-level? Top level is better but I can't add imports easily with replace_file_content if I don't see the top)
-        // I will assume I can add the import at the top in a separate call or use the full file view.
-        // For now, I'll use the utility logic. Wait, I need to import it.
-        // I'll do a separate edit to add the import first.
-
-        // ... (Logic replacement) ...
-        // Actually, I'll do the import in a separate step to be safe.
-        // This step is just for the logic.
-
         for (const txData of newTransactions) {
             const account = accountsMap.get(txData.accountId);
 
@@ -135,6 +136,20 @@ export function useTransactions() {
                 maaserAccount,
                 accountContext
             );
+
+            // Ensure subcategory_id is passed if present in txData (calculateTransactionEffects might not handle it yet, but we can add it here)
+            // Actually calculateTransactionEffects returns objects ready for insert. We need to make sure it includes subcategory_id.
+            // Let's check calculateTransactionEffects. It likely maps input to output.
+            // If it doesn't, we might need to patch it. 
+            // But wait, calculateTransactionEffects takes TransactionInput.
+            // I should check TransactionInput definition.
+
+            // For now, let's assume I need to manually add it if it's missing, or update the utility.
+            // Updating the utility is cleaner.
+            // But I can also patch it here for the main transaction.
+            if (txData.subcategoryId && newTxs.length > 0) {
+                newTxs[0].subcategory_id = txData.subcategoryId;
+            }
 
             txsToInsert.push(...newTxs);
 
@@ -161,6 +176,7 @@ export function useTransactions() {
             description: t.description,
             type: t.type as 'income' | 'expense' | 'transfer',
             categoryId: t.category_id,
+            subcategoryId: t.subcategory_id,
             accountId: t.account_id,
             toAccountId: t.to_account_id,
             status: t.status,
@@ -266,6 +282,7 @@ export function useTransactions() {
         if (updates.description) dbUpdates.description = updates.description;
         if (updates.date) dbUpdates.date = updates.date.toISOString();
         if (updates.categoryId) dbUpdates.category_id = updates.categoryId;
+        if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId; // Handle subcategory
         if (updates.isMaaserable !== undefined) dbUpdates.is_maaserable = updates.isMaaserable;
         if (updates.isDeductible !== undefined) dbUpdates.is_deductible = updates.isDeductible;
 
