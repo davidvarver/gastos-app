@@ -454,7 +454,7 @@ export function useTransactions() {
                         // For now, I'll generate a temporary ID for the UI. It will be replaced by Realtime update shortly.
                         newTxs.push({
                             id: crypto.randomUUID(), // Temp ID
-                            date: newTx.date,
+                            date: new Date(newTx.date),
                             amount: maaserAmount,
                             description: `Maaser (10%): ${newTx.description}`,
                             type: 'transfer',
@@ -476,7 +476,7 @@ export function useTransactions() {
                     const refundAmount = Number(newTx.amount);
                     newTxs.push({
                         id: crypto.randomUUID(),
-                        date: newTx.date,
+                        date: new Date(newTx.date),
                         amount: refundAmount,
                         description: `Reembolso Maaser: ${newTx.description}`,
                         type: 'transfer',
