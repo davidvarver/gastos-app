@@ -85,7 +85,7 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-[#151e32] border border-[#1e293b] rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl animate-in zoom-in-95 relative">
                 <button
                     onClick={onClose}

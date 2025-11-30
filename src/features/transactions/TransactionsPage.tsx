@@ -10,7 +10,7 @@ import { Transaction } from '@/db/db';
 
 export function TransactionsPage() {
     const { transactions, categories, addTransaction, deleteTransactions, updateTransaction } = useTransactions();
-    const { accounts } = useAccounts();
+    const { accounts, isLoading: accountsLoading } = useAccounts();
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // Search State
@@ -87,10 +87,6 @@ export function TransactionsPage() {
 
     // Handlers
     const handleAdd = () => {
-        if (!accounts?.length) {
-            alert("Primero crea una cuenta/bolsa");
-            return;
-        }
         setEditingTx(undefined);
         setIsModalOpen(true);
     };
@@ -162,10 +158,14 @@ export function TransactionsPage() {
                     )}
                     <button
                         onClick={handleAdd}
-                        className="bg-[#4ade80] text-[#0b1121] font-bold px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-[#4ade80]/90 transition-colors shadow-lg shadow-[#4ade80]/20"
+                        disabled={accountsLoading}
+                        className={cn(
+                            "bg-[#4ade80] text-[#0b1121] font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-[#4ade80]/20",
+                            accountsLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#4ade80]/90"
+                        )}
                     >
                         <Plus className="w-4 h-4" />
-                        Nuevo Movimiento
+                        {accountsLoading ? 'Cargando...' : 'Nuevo Movimiento'}
                     </button>
                 </div>
             </div>
