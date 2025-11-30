@@ -129,8 +129,7 @@ export function useTransactions() {
                     currency: 'MXN', // Default currency, maybe infer from others?
                     initial_balance: 0,
                     current_balance: 0,
-                    color: '#a855f7', // Purple
-                    icon: 'PiggyBank'
+                    color: '#a855f7' // Purple
                 }])
                 .select()
                 .single();
@@ -354,8 +353,7 @@ export function useTransactions() {
                         currency: 'MXN',
                         initial_balance: 0,
                         current_balance: 0,
-                        color: '#a855f7',
-                        icon: 'PiggyBank'
+                        color: '#a855f7'
                     }])
                     .select()
                     .single();
