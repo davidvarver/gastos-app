@@ -70,32 +70,67 @@ export function useCategories() {
     const addCategory = async (category: Omit<Category, 'id' | 'isSystem' | 'subcategories'>) => {
         if (!user) return;
 
+        const tempId = crypto.randomUUID();
+        const newCategory: Category = {
+            id: tempId,
+            name: category.name,
+            type: category.type,
+            color: category.color,
+            icon: category.icon,
+            isSystem: false,
+            subcategories: []
+        };
+
+        // Optimistic Update
+        setCategories(prev => [...(prev || []), newCategory].sort((a, b) => a.name.localeCompare(b.name)));
+
         const dbCategory = {
             user_id: user.id,
             name: category.name,
-            type: category.type || null, // Handle optional type
+            type: category.type || null,
             color: category.color,
             icon: category.icon,
             is_system: false
         };
 
-        const { error } = await supabase.from('categories').insert([dbCategory]);
-        if (error) throw error;
+        const { data, error } = await supabase.from('categories').insert([dbCategory]).select().single();
+
+        if (error) {
+            // Rollback
+            setCategories(prev => prev?.filter(c => c.id !== tempId));
+            throw error;
+        }
+
+        // Replace Temp ID
+        setCategories(prev => prev?.map(c => c.id === tempId ? { ...c, id: data.id } : c));
     };
 
     const updateCategory = async (id: string, updates: Partial<Category>) => {
+        // Optimistic Update
+        setCategories(prev => prev?.map(c => c.id === id ? { ...c, ...updates } : c));
+
         const dbUpdates: any = {};
         if (updates.name) dbUpdates.name = updates.name;
-        if (updates.type !== undefined) dbUpdates.type = updates.type || null; // Allow clearing type
+        if (updates.type !== undefined) dbUpdates.type = updates.type || null;
         if (updates.color) dbUpdates.color = updates.color;
         if (updates.icon) dbUpdates.icon = updates.icon;
 
         const { error } = await supabase.from('categories').update(dbUpdates).eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            // Rollback (Fetch to restore)
+            fetchCategories();
+            throw error;
+        }
     };
 
     const deleteCategory = async (id: string) => {
-        // Check usage first
+        // Check usage first (Client-side check if possible, or trust server error)
+        // We can check local transactions state if available, but here we only have categories.
+        // Let's keep the server check but maybe do optimistic delete if we are confident?
+        // Usage check is async, so we can't be fully optimistic without risk.
+        // But we can do the check, THEN optimistic delete, THEN server delete.
+
         const { count, error: countError } = await supabase
             .from('transactions')
             .select('*', { count: 'exact', head: true })
@@ -106,8 +141,16 @@ export function useCategories() {
             throw new Error(`No se puede eliminar: Esta categoría se usa en ${count} transacciones.`);
         }
 
+        // Optimistic Delete
+        setCategories(prev => prev?.filter(c => c.id !== id));
+
         const { error } = await supabase.from('categories').delete().eq('id', id);
-        if (error) throw error;
+
+        if (error) {
+            // Rollback
+            fetchCategories();
+            throw error;
+        }
     };
 
     const addSubcategory = async (categoryId: string, name: string) => {
