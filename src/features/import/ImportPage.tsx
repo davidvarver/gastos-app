@@ -156,18 +156,24 @@ export function ImportPage() {
                 type,
                 accountId: tx.accountId,
                 categoryId: tx.categoryId,
-                status: 'cleared' as const
+                status: 'cleared' as const,
+                isMaaserable: false, // Default to false for imports to avoid unwanted auto-deductions
+                isDeductible: false
             };
         }).filter(t => t !== null) as any[];
 
-        await addTransactions(transactionsToImport);
-
-        alert(`Importadas ${transactionsToImport.length} transacciones correctamente.`);
-        setPreviewData([]);
-        setFile(null);
-        setGlobalAccountId('');
-        setGlobalCategoryId('');
-        setSelectedIndices(new Set());
+        try {
+            await addTransactions(transactionsToImport);
+            alert(`Importadas ${transactionsToImport.length} transacciones correctamente.`);
+            setPreviewData([]);
+            setFile(null);
+            setGlobalAccountId('');
+            setGlobalCategoryId('');
+            setSelectedIndices(new Set());
+        } catch (error: any) {
+            console.error("Import failed:", error);
+            alert(`Error al importar: ${error.message || error}`);
+        }
     };
 
     return (

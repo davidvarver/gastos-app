@@ -110,7 +110,7 @@ export function useTransactions() {
             .from('accounts')
             .select('*')
             .ilike('name', 'maaser')
-            .single();
+            .maybeSingle();
 
         // Check if we need Maaser account
         const needsMaaser = newTransactions.some(t =>
@@ -336,7 +336,7 @@ export function useTransactions() {
                 .from('accounts')
                 .select('*')
                 .ilike('name', 'maaser')
-                .single();
+                .maybeSingle();
 
             // Check if we need Maaser account
             const needsMaaser = (newTx.type === 'income' && newTx.is_maaserable !== false) ||
