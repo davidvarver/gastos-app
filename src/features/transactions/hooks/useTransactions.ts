@@ -106,11 +106,45 @@ export function useTransactions() {
         if (!user) return;
 
         // 1. Get Maaser Account
-        const { data: maaserAccount } = await supabase
+        let { data: maaserAccount } = await supabase
             .from('accounts')
             .select('*')
             .ilike('name', 'maaser')
             .single();
+
+        // Check if we need Maaser account
+        const needsMaaser = newTransactions.some(t =>
+            (t.type === 'income' && t.isMaaserable !== false) ||
+            (t.type === 'expense' && t.isDeductible === true)
+        );
+
+        if (!maaserAccount && needsMaaser) {
+            // Auto-create Maaser account
+            const { data: newAccount, error: createError } = await supabase
+                .from('accounts')
+                .insert([{
+                    user_id: user.id,
+                    name: 'Maaser',
+                    type: 'savings', // Default to savings or similar
+                    currency: 'MXN', // Default currency, maybe infer from others?
+                    initial_balance: 0,
+                    current_balance: 0,
+                    color: '#a855f7', // Purple
+                    icon: 'PiggyBank'
+                }])
+                .select()
+                .single();
+
+            if (createError) {
+                console.error("Error auto-creating Maaser account:", createError);
+                // Fallback: Proceed without Maaser logic or throw? 
+                // Better to log and proceed, or throw to alert user.
+                // Throwing might block the main transaction. 
+                // Let's throw so user knows something went wrong.
+                throw createError;
+            }
+            maaserAccount = newAccount;
+        }
 
         // 2. Get involved accounts to check defaults
         const accountIds = [...new Set(newTransactions.map(t => t.accountId))];
@@ -298,11 +332,37 @@ export function useTransactions() {
             else if (newTx.type === 'expense') await updateAccountBalance(newTx.account_id, -newAmount);
 
             // 5. Regenerate Maaser
-            const { data: mAccount } = await supabase
+            let { data: mAccount } = await supabase
                 .from('accounts')
                 .select('*')
                 .ilike('name', 'maaser')
                 .single();
+
+            // Check if we need Maaser account
+            const needsMaaser = (newTx.type === 'income' && newTx.is_maaserable !== false) ||
+                (newTx.type === 'expense' && newTx.is_deductible === true);
+
+            if (!mAccount && needsMaaser && user) {
+                // Auto-create Maaser account
+                const { data: newAccount, error: createError } = await supabase
+                    .from('accounts')
+                    .insert([{
+                        user_id: user.id,
+                        name: 'Maaser',
+                        type: 'savings',
+                        currency: 'MXN',
+                        initial_balance: 0,
+                        current_balance: 0,
+                        color: '#a855f7',
+                        icon: 'PiggyBank'
+                    }])
+                    .select()
+                    .single();
+
+                if (createError) console.error("Error auto-creating Maaser account:", createError);
+                else mAccount = newAccount;
+            }
+
             maaserAccount = mAccount;
 
             if (maaserAccount && !newTx.is_system_generated && user) {
