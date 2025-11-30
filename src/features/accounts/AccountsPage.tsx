@@ -13,6 +13,26 @@ export function AccountsPage() {
     const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+
+    const handleEdit = (account: Account) => {
+        setEditingAccount(account);
+        setIsCreateModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsCreateModalOpen(false);
+        setEditingAccount(null);
+    };
+
+    const handleSubmit = (data: Omit<Account, 'id'>) => {
+        if (editingAccount) {
+            updateAccount(editingAccount.id, data);
+        } else {
+            addAccount(data);
+        }
+        handleCloseModal();
+    };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -36,8 +56,9 @@ export function AccountsPage() {
                         <AccountCard
                             account={account}
                             onEdit={(acc) => {
-                                const newName = prompt("Nuevo nombre:", acc.name);
-                                if (newName) updateAccount(acc.id, { name: newName });
+                                // Stop propagation to prevent opening details modal
+                                // event is not passed here, need to check AccountCard
+                                handleEdit(acc);
                             }}
                             onDelete={(id) => {
                                 if (confirm("¿Eliminar cuenta?")) deleteAccount(id);
@@ -55,13 +76,12 @@ export function AccountsPage() {
                 />
             )}
 
-            {/* Create Account Modal */}
+            {/* Create/Edit Account Modal */}
             <AccountFormModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSubmit={(data) => {
-                    addAccount(data);
-                }}
+                onClose={handleCloseModal}
+                onSubmit={handleSubmit}
+                initialData={editingAccount || undefined}
             />
         </div>
     );
