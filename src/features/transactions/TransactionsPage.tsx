@@ -374,14 +374,16 @@ export function TransactionsPage() {
                 </table>
             </div>
 
-            <TransactionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSave={handleSave}
-                initialData={editingTx}
-                accounts={accounts}
-                categories={categories}
-            />
+            {isModalOpen && (
+                <TransactionModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={handleSave}
+                    initialData={editingTx}
+                    accounts={accounts}
+                    categories={categories}
+                />
+            )}
         </div>
     );
 }

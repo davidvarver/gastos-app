@@ -110,7 +110,13 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                         <input
                             type="date"
                             className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                            value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
+                            value={(() => {
+                                try {
+                                    return formData.date ? new Date(formData.date).toISOString().split('T')[0] : '';
+                                } catch (e) {
+                                    return '';
+                                }
+                            })()}
                             onChange={e => setFormData({ ...formData, date: e.target.value ? new Date(e.target.value) : new Date() })}
                         />
                     </div>
