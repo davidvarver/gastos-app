@@ -56,9 +56,32 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
 
     if (!isOpen) return null;
 
+    const [error, setError] = useState<string | null>(null);
+
     const handleSubmit = async () => {
-        await onSave(formData);
-        onClose();
+        setError(null);
+
+        // Validation
+        if (!formData.description?.trim()) {
+            setError("La descripción es obligatoria.");
+            return;
+        }
+        if (!formData.amount || formData.amount <= 0) {
+            setError("El monto debe ser mayor a 0.");
+            return;
+        }
+        if (!formData.accountId) {
+            setError("Debes seleccionar una cuenta.");
+            return;
+        }
+
+        try {
+            await onSave(formData);
+            onClose();
+        } catch (err) {
+            console.error("Error saving transaction:", err);
+            setError("Error al guardar. Inténtalo de nuevo.");
+        }
     };
 
     return (
@@ -76,6 +99,11 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                 </h3>
 
                 <div className="space-y-4">
+                    {error && (
+                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/50 text-red-400 text-sm font-medium animate-in slide-in-from-top-2">
+                            {error}
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-400 uppercase">Descripción</label>
                         <input
