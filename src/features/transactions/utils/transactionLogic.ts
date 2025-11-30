@@ -12,6 +12,7 @@ export interface TransactionInput {
     description: string;
     type: 'income' | 'expense' | 'transfer';
     categoryId?: string;
+    subcategoryId?: string;
     accountId: string;
     toAccountId?: string;
     status: string;
@@ -56,7 +57,8 @@ export function calculateTransactionEffects(
         amount: txData.amount,
         description: txData.description,
         type: txData.type,
-        category_id: txData.categoryId,
+        category_id: txData.categoryId || null,
+        subcategory_id: txData.subcategoryId || null,
         account_id: txData.accountId,
         to_account_id: txData.toAccountId,
         status: txData.status,

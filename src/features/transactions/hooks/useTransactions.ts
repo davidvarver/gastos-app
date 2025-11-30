@@ -181,9 +181,10 @@ export function useTransactions() {
             // For now, let's assume I need to manually add it if it's missing, or update the utility.
             // Updating the utility is cleaner.
             // But I can also patch it here for the main transaction.
-            if (txData.subcategoryId && newTxs.length > 0) {
-                newTxs[0].subcategory_id = txData.subcategoryId;
-            }
+            // Ensure subcategory_id is passed if present in txData (calculateTransactionEffects handles it now)
+            // if (txData.subcategoryId && newTxs.length > 0) {
+            //     newTxs[0].subcategory_id = txData.subcategoryId;
+            // }
 
             txsToInsert.push(...newTxs);
 
@@ -315,8 +316,8 @@ export function useTransactions() {
         if (updates.amount) dbUpdates.amount = updates.amount;
         if (updates.description) dbUpdates.description = updates.description;
         if (updates.date) dbUpdates.date = updates.date.toISOString();
-        if (updates.categoryId) dbUpdates.category_id = updates.categoryId;
-        if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId; // Handle subcategory
+        if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
+        if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId || null;
         if (updates.isMaaserable !== undefined) dbUpdates.is_maaserable = updates.isMaaserable;
         if (updates.isDeductible !== undefined) dbUpdates.is_deductible = updates.isDeductible;
 
