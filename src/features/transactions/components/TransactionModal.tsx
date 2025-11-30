@@ -85,8 +85,8 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-[#151e32] border border-[#1e293b] rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl animate-in zoom-in-95 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-[#151e32] border border-[#1e293b] rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl relative">
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -100,16 +100,27 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
 
                 <div className="space-y-4">
                     {error && (
-                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/50 text-red-400 text-sm font-medium animate-in slide-in-from-top-2">
+                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/50 text-red-400 text-sm font-medium">
                             {error}
                         </div>
                     )}
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-400 uppercase">Fecha</label>
+                        <input
+                            type="date"
+                            className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
+                            value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
+                            onChange={e => setFormData({ ...formData, date: e.target.value ? new Date(e.target.value) : new Date() })}
+                        />
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-400 uppercase">Descripción</label>
                         <input
                             type="text"
                             className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                            value={formData.description}
+                            value={formData.description || ''}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Ej: Compra de supermercado"
                             autoFocus
@@ -145,10 +156,10 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                         <label className="text-xs font-medium text-slate-400 uppercase">Cuenta</label>
                         <select
                             className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                            value={formData.accountId}
+                            value={formData.accountId || ''}
                             onChange={e => setFormData({ ...formData, accountId: e.target.value })}
                         >
-                            {accounts?.map(acc => (
+                            {Array.isArray(accounts) && accounts.map(acc => (
                                 <option key={acc.id} value={acc.id}>{acc.name}</option>
                             ))}
                         </select>
@@ -163,7 +174,7 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                                 onChange={e => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
                             >
                                 <option value="">Sin Categoría</option>
-                                {categories?.map(cat => (
+                                {Array.isArray(categories) && categories.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
@@ -177,7 +188,7 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                                 disabled={!formData.categoryId}
                             >
                                 <option value="">-</option>
-                                {categories?.find(c => c.id === formData.categoryId)?.subcategories?.map(sub => (
+                                {Array.isArray(categories) && categories.find(c => c.id === formData.categoryId)?.subcategories?.map(sub => (
                                     <option key={sub.id} value={sub.id}>{sub.name}</option>
                                 ))}
                             </select>
