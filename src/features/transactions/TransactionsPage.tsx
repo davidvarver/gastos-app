@@ -5,6 +5,8 @@ import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { TransactionModal } from './components/TransactionModal';
+import { Transaction } from '@/db/db';
 
 export function TransactionsPage() {
     const { transactions, categories, addTransaction, deleteTransactions, updateTransaction } = useTransactions();
@@ -14,9 +16,9 @@ export function TransactionsPage() {
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Edit Modal State
-    const [editingTx, setEditingTx] = useState<any | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    // Modal State
+    const [editingTx, setEditingTx] = useState<Partial<Transaction> | undefined>(undefined);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Filter State
     const [showFilters, setShowFilters] = useState(false);
@@ -84,62 +86,43 @@ export function TransactionsPage() {
     });
 
     // Handlers
-    const handleAdd = async () => {
+    const handleAdd = () => {
         if (!accounts?.length) {
             alert("Primero crea una cuenta/bolsa");
             return;
         }
-
-        const amount = parseFloat(prompt("Monto:") || "0");
-        if (!amount) return;
-
-        const description = prompt("Descripción:");
-        if (!description) return;
-
-        const type = confirm("¿Es un INGRESO? (Aceptar = Ingreso, Cancelar = Gasto)") ? 'income' : 'expense';
-        const categoryName = prompt("Categoría (ej: Alimentación):");
-        const category = categories?.find(c => c.name.toLowerCase() === categoryName?.toLowerCase());
-
-        addTransaction({
-            date: new Date(),
-            amount,
-            description,
-            type,
-            accountId: accounts[0].id,
-            categoryId: category?.id,
-            status: 'cleared',
-            isMaaserable: type === 'income', // Default true for income
-            isDeductible: false // Default false for expense
-        });
+        setEditingTx(undefined);
+        setIsModalOpen(true);
     };
 
-    const openEditModal = (tx: any) => {
-        setEditingTx({
-            ...tx,
-            // Ensure defaults exist for editing
-            isMaaserable: tx.isMaaserable ?? (tx.type === 'income'),
-            isDeductible: tx.isDeductible ?? false
-        });
-        setIsEditModalOpen(true);
+    const openEditModal = (tx: Transaction) => {
+        setEditingTx(tx);
+        setIsModalOpen(true);
     };
 
-    const handleSaveEdit = async () => {
-        if (!editingTx) return;
+    const handleSave = async (txData: Partial<Transaction>) => {
+        if (editingTx?.id) {
+            // Update
+            await updateTransaction(editingTx.id, txData);
+        } else {
+            // Create
+            if (!txData.amount || !txData.description || !txData.accountId) return;
 
-        await updateTransaction(editingTx.id, {
-            description: editingTx.description,
-            amount: parseFloat(editingTx.amount),
-            date: new Date(editingTx.date),
-            accountId: editingTx.accountId,
-            categoryId: editingTx.categoryId,
-            subcategoryId: editingTx.subcategoryId,
-            type: editingTx.type,
-            isMaaserable: editingTx.isMaaserable,
-            isDeductible: editingTx.isDeductible
-        });
-
-        setIsEditModalOpen(false);
-        setEditingTx(null);
+            await addTransaction({
+                date: txData.date || new Date(),
+                amount: txData.amount,
+                description: txData.description,
+                type: txData.type || 'expense',
+                accountId: txData.accountId,
+                categoryId: txData.categoryId,
+                subcategoryId: txData.subcategoryId,
+                status: 'cleared',
+                isMaaserable: txData.isMaaserable,
+                isDeductible: txData.isDeductible
+            });
+        }
+        setIsModalOpen(false);
+        setEditingTx(undefined);
     };
 
     const toggleSelection = (id: string) => {
@@ -391,138 +374,15 @@ export function TransactionsPage() {
                 </table>
             </div>
 
-            {/* Edit Modal */}
-            {isEditModalOpen && editingTx && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-[#151e32] border border-[#1e293b] rounded-2xl w-full max-w-md p-6 space-y-6 shadow-2xl animate-in zoom-in-95">
-                        <h3 className="text-xl font-bold text-white">Editar Transacción</h3>
-
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-400 uppercase">Descripción</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                    value={editingTx.description}
-                                    onChange={e => setEditingTx({ ...editingTx, description: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-medium text-slate-400 uppercase">Monto</label>
-                                    <input
-                                        type="number"
-                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                        value={editingTx.amount}
-                                        onChange={e => setEditingTx({ ...editingTx, amount: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-medium text-slate-400 uppercase">Tipo</label>
-                                    <select
-                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                        value={editingTx.type}
-                                        onChange={e => setEditingTx({ ...editingTx, type: e.target.value })}
-                                    >
-                                        <option value="expense">Gasto</option>
-                                        <option value="income">Ingreso</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-medium text-slate-400 uppercase">Cuenta</label>
-                                <select
-                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                    value={editingTx.accountId}
-                                    onChange={e => setEditingTx({ ...editingTx, accountId: e.target.value })}
-                                >
-                                    {accounts?.map(acc => (
-                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-medium text-slate-400 uppercase">Categoría</label>
-                                    <select
-                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                        value={editingTx.categoryId || ''}
-                                        onChange={e => setEditingTx({ ...editingTx, categoryId: e.target.value, subcategoryId: '' })}
-                                    >
-                                        <option value="">Sin Categoría</option>
-                                        {categories?.map(cat => (
-                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-medium text-slate-400 uppercase">Subcategoría</label>
-                                    <select
-                                        className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
-                                        value={editingTx.subcategoryId || ''}
-                                        onChange={e => setEditingTx({ ...editingTx, subcategoryId: e.target.value })}
-                                        disabled={!editingTx.categoryId}
-                                    >
-                                        <option value="">-</option>
-                                        {categories?.find(c => c.id === editingTx.categoryId)?.subcategories?.map(sub => (
-                                            <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Maaser Toggles */}
-                            <div className="pt-2 border-t border-slate-700/50">
-                                {editingTx.type === 'income' ? (
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            id="isMaaserable"
-                                            checked={editingTx.isMaaserable !== false}
-                                            onChange={e => setEditingTx({ ...editingTx, isMaaserable: e.target.checked })}
-                                            className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500"
-                                        />
-                                        <label htmlFor="isMaaserable" className="text-sm font-medium text-slate-300">
-                                            Aplica para Maaser (10%)
-                                        </label>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="checkbox"
-                                            id="isDeductible"
-                                            checked={editingTx.isDeductible === true}
-                                            onChange={e => setEditingTx({ ...editingTx, isDeductible: e.target.checked })}
-                                            className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500"
-                                        />
-                                        <label htmlFor="isDeductible" className="text-sm font-medium text-slate-300">
-                                            Es Deducible de Maaser
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="flex-1 px-4 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleSaveEdit}
-                                className="flex-1 px-4 py-3 rounded-xl bg-[#4ade80] text-[#0b1121] hover:bg-[#4ade80]/90 transition-colors font-bold"
-                            >
-                                Guardar Cambios
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <TransactionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSave}
+                initialData={editingTx}
+                accounts={accounts}
+                categories={categories}
+            />
         </div>
     );
 }
+
