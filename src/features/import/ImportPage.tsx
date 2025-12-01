@@ -217,110 +217,162 @@ export function ImportPage() {
         }
     };
 
+    // Helper to calculate display values based on Amex mode
+    const getDisplayValues = (rawAmount: number) => {
+        let effectiveAmount = rawAmount;
+        let isExpense = false;
+
+        if (isAmex) {
+            // Amex Mode: Positive = Expense, Negative = Income (Payment)
+            if (rawAmount >= 0) {
+                isExpense = true;
+                effectiveAmount = -Math.abs(rawAmount); // Show as negative for visual consistency with expenses
+            } else {
+                isExpense = false;
+                effectiveAmount = Math.abs(rawAmount);
+            }
+        } else {
+            // Normal Mode: Negative = Expense, Positive = Income
+            if (rawAmount < 0) {
+                isExpense = true;
+                effectiveAmount = rawAmount; // Already negative
+            } else {
+                isExpense = false;
+                effectiveAmount = rawAmount;
+            }
+        }
+
+        return { effectiveAmount, isExpense };
+    };
+
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-white">Importar Transacciones</h2>
-                <p className="text-slate-400">Sube tus estados de cuenta (CSV) y clasifica tus movimientos.</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-white">Importar Transacciones</h2>
+                    <p className="text-slate-400 mt-1">Sube tus estados de cuenta (CSV) y clasifica tus movimientos.</p>
+                </div>
+                {previewData.length > 0 && (
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleAutoCategorize}
+                            disabled={!transactions}
+                            className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-4 py-2 rounded-xl disabled:opacity-50 transition-all shadow-lg shadow-purple-500/20 flex items-center gap-2 text-sm"
+                        >
+                            <Sparkles className="w-4 h-4" />
+                            Auto-Completar con IA
+                        </button>
+                    </div>
+                )}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-8 lg:grid-cols-12">
                 {/* Left Panel: Upload & Global Settings */}
-                <div className="space-y-6 lg:col-span-1">
-                    <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:bg-slate-800/50 transition-colors group">
+                <div className="space-y-6 lg:col-span-4 xl:col-span-3">
+                    {/* Upload Box */}
+                    <div className={cn(
+                        "border-2 border-dashed rounded-2xl p-8 text-center transition-all group cursor-pointer relative overflow-hidden",
+                        file ? "border-[#4ade80]/50 bg-[#4ade80]/5" : "border-slate-700 hover:border-slate-600 hover:bg-slate-800/30"
+                    )}>
                         <input
                             type="file"
                             accept=".csv"
                             onChange={handleFileChange}
-                            className="hidden"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             id="file-upload"
                         />
-                        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-3">
-                            <div className="p-4 bg-slate-800 rounded-full group-hover:bg-slate-700 transition-colors">
-                                <Upload className="w-8 h-8 text-slate-400" />
+                        <div className="flex flex-col items-center gap-4 relative z-0">
+                            <div className={cn(
+                                "p-4 rounded-full transition-colors",
+                                file ? "bg-[#4ade80]/20 text-[#4ade80]" : "bg-slate-800 text-slate-400 group-hover:bg-slate-700"
+                            )}>
+                                <Upload className="w-8 h-8" />
                             </div>
-                            <span className="font-medium text-slate-200">Click para subir CSV</span>
-                            <span className="text-xs text-slate-500">{file ? file.name : "O arrastra aquí"}</span>
-                        </label>
+                            <div>
+                                <span className="font-bold text-slate-200 block text-lg">
+                                    {file ? "Archivo Seleccionado" : "Subir CSV"}
+                                </span>
+                                <span className="text-sm text-slate-500 mt-1 block max-w-[200px] truncate mx-auto">
+                                    {file ? file.name : "Arrastra o haz click aquí"}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-[#151e32] p-6 rounded-xl border border-[#1e293b] space-y-4">
-                        <h3 className="font-semibold text-white">Configuración General</h3>
+                    {/* Settings Box */}
+                    <div className="bg-[#151e32] p-6 rounded-2xl border border-[#1e293b] space-y-6 shadow-xl">
+                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                            Configuración
+                            <div className="h-px flex-1 bg-slate-800"></div>
+                        </h3>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-400">Cuenta por Defecto</label>
-                            <select
-                                className="w-full p-2.5 rounded-lg border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none"
-                                value={globalAccountId}
-                                onChange={(e) => handleGlobalAccountChange(e.target.value)}
-                            >
-                                <option value="">Seleccionar...</option>
-                                {accounts?.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cuenta por Defecto</label>
+                                <select
+                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none transition-all"
+                                    value={globalAccountId}
+                                    onChange={(e) => handleGlobalAccountChange(e.target.value)}
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {accounts?.map(acc => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-400">Categoría por Defecto</label>
-                            <select
-                                className="w-full p-2.5 rounded-lg border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none"
-                                value={globalCategoryId}
-                                onChange={(e) => handleGlobalCategoryChange(e.target.value)}
-                            >
-                                <option value="">Sin Categoría...</option>
-                                {categories?.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Categoría por Defecto</label>
+                                <select
+                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none transition-all"
+                                    value={globalCategoryId}
+                                    onChange={(e) => handleGlobalCategoryChange(e.target.value)}
+                                >
+                                    <option value="">Sin Categoría...</option>
+                                    {categories?.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div className="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                            <input
-                                type="checkbox"
-                                id="amex-mode"
-                                checked={isAmex}
-                                onChange={(e) => setIsAmex(e.target.checked)}
-                                className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-[#4ade80] focus:ring-[#4ade80]"
-                            />
-                            <label htmlFor="amex-mode" className="text-sm font-medium text-slate-300 cursor-pointer select-none">
-                                Modo Amex (Invertir signos)
+                            <label className={cn(
+                                "flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer",
+                                isAmex ? "bg-[#4ade80]/10 border-[#4ade80]/50" : "bg-slate-800/30 border-slate-700 hover:bg-slate-800/50"
+                            )}>
+                                <input
+                                    type="checkbox"
+                                    checked={isAmex}
+                                    onChange={(e) => setIsAmex(e.target.checked)}
+                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-[#4ade80] focus:ring-[#4ade80]"
+                                />
+                                <div>
+                                    <span className={cn("font-bold block text-sm", isAmex ? "text-[#4ade80]" : "text-slate-300")}>Modo Amex</span>
+                                    <span className="text-xs text-slate-500 block">Invierte signos (+ es Gasto)</span>
+                                </div>
                             </label>
                         </div>
 
                         <button
                             onClick={handleImport}
                             disabled={!previewData.length}
-                            className="w-full bg-[#4ade80] hover:bg-[#4ade80]/90 text-[#0b1121] font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#4ade80]/20"
+                            className="w-full bg-[#4ade80] hover:bg-[#4ade80]/90 text-[#0b1121] font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#4ade80]/20 mt-2"
                         >
                             Confirmar Importación
                         </button>
-
-                        <div className="pt-4 border-t border-slate-700/50">
-                            <button
-                                onClick={handleAutoCategorize}
-                                disabled={!previewData.length || !transactions}
-                                className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
-                            >
-                                <Sparkles className="w-4 h-4" />
-                                Auto-Completar con IA (Historial)
-                            </button>
-                            <p className="text-xs text-slate-500 text-center mt-2">
-                                Usa tu historial para adivinar categorías y cuentas.
-                            </p>
-                        </div>
                     </div>
                 </div>
 
                 {/* Right Panel: Preview Table */}
-                <div className="lg:col-span-2 bg-[#151e32] border border-[#1e293b] rounded-xl overflow-hidden shadow-xl flex flex-col h-[600px]">
-                    {/* Bulk Action Bar - Only visible when items selected */}
+                <div className="lg:col-span-8 xl:col-span-9 bg-[#151e32] border border-[#1e293b] rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[700px]">
+                    {/* Bulk Action Bar */}
                     {selectedIndices.size > 0 ? (
-                        <div className="p-4 border-b border-[#1e293b] bg-[#4ade80]/10 flex items-center gap-4 animate-in slide-in-from-top-2">
-                            <span className="font-medium text-[#4ade80] whitespace-nowrap">{selectedIndices.size} seleccionados</span>
+                        <div className="p-4 border-b border-[#1e293b] bg-[#4ade80]/10 flex flex-wrap items-center gap-4 animate-in slide-in-from-top-2">
+                            <span className="font-bold text-[#4ade80] whitespace-nowrap px-2">{selectedIndices.size} seleccionados</span>
+
+                            <div className="h-6 w-px bg-[#4ade80]/30 hidden md:block"></div>
 
                             <select
-                                className="flex-1 p-2 rounded-lg border border-[#4ade80]/30 bg-[#0b1121] text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                className="flex-1 min-w-[150px] p-2 rounded-lg border border-[#4ade80]/30 bg-[#0b1121] text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
                                 value={bulkAccountId}
                                 onChange={(e) => setBulkAccountId(e.target.value)}
                             >
@@ -331,7 +383,7 @@ export function ImportPage() {
                             </select>
 
                             <select
-                                className="flex-1 p-2 rounded-lg border border-[#4ade80]/30 bg-[#0b1121] text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                className="flex-1 min-w-[150px] p-2 rounded-lg border border-[#4ade80]/30 bg-[#0b1121] text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
                                 value={bulkCategoryId}
                                 onChange={(e) => setBulkCategoryId(e.target.value)}
                             >
@@ -343,24 +395,35 @@ export function ImportPage() {
 
                             <button
                                 onClick={applyBulkUpdate}
-                                className="bg-[#4ade80] text-[#0b1121] font-bold px-4 py-2 rounded-lg hover:bg-[#4ade80]/90 transition-colors text-sm"
+                                className="bg-[#4ade80] text-[#0b1121] font-bold px-6 py-2 rounded-lg hover:bg-[#4ade80]/90 transition-colors text-sm shadow-lg shadow-[#4ade80]/10"
                             >
-                                Aplicar
+                                Aplicar Cambios
                             </button>
                         </div>
                     ) : (
-                        <div className="p-4 border-b border-[#1e293b] bg-[#1e293b]/30 flex justify-between items-center">
-                            <span className="font-medium text-white">Previsualización</span>
-                            <span className="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded-full">{previewData.length} filas</span>
+                        <div className="p-5 border-b border-[#1e293b] bg-[#1e293b]/30 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <span className="font-bold text-white text-lg">Previsualización</span>
+                                {previewData.length > 0 && (
+                                    <span className="text-xs font-medium text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700">
+                                        {previewData.length} movimientos
+                                    </span>
+                                )}
+                            </div>
+                            {isAmex && (
+                                <span className="text-xs font-bold text-[#4ade80] bg-[#4ade80]/10 px-3 py-1 rounded-full border border-[#4ade80]/20 animate-pulse">
+                                    Modo Amex Activo
+                                </span>
+                            )}
                         </div>
                     )}
 
-                    <div className="overflow-auto flex-1 custom-scrollbar">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-slate-400 uppercase bg-[#0f172a] sticky top-0 z-10">
+                    <div className="overflow-auto flex-1 custom-scrollbar bg-[#0b1121]/50">
+                        <table className="w-full text-sm text-left border-collapse">
+                            <thead className="text-xs font-bold text-slate-400 uppercase bg-[#0f172a] sticky top-0 z-10 shadow-sm">
                                 <tr>
-                                    <th className="px-4 py-3 w-10">
-                                        <button onClick={toggleAll} className="text-slate-400 hover:text-white">
+                                    <th className="px-6 py-4 w-14">
+                                        <button onClick={toggleAll} className="text-slate-400 hover:text-white transition-colors">
                                             {previewData.length > 0 && selectedIndices.size === previewData.length ? (
                                                 <CheckSquare className="w-5 h-5 text-[#4ade80]" />
                                             ) : (
@@ -368,23 +431,25 @@ export function ImportPage() {
                                             )}
                                         </button>
                                     </th>
-                                    <th className="px-4 py-3 font-medium">Fecha</th>
-                                    <th className="px-4 py-3 font-medium">Descripción</th>
-                                    <th className="px-4 py-3 font-medium text-right">Monto</th>
-                                    <th className="px-4 py-3 font-medium w-[180px]">Cuenta</th>
-                                    <th className="px-4 py-3 font-medium w-[180px]">Categoría</th>
+                                    <th className="px-6 py-4">Fecha</th>
+                                    <th className="px-6 py-4">Descripción</th>
+                                    <th className="px-6 py-4 text-right">Monto</th>
+                                    <th className="px-6 py-4 w-[200px]">Cuenta</th>
+                                    <th className="px-6 py-4 w-[200px]">Categoría</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#1e293b]">
                                 {previewData.map((row, i) => {
                                     const isSelected = selectedIndices.has(i);
+                                    const { effectiveAmount, isExpense } = getDisplayValues(row.amount);
+
                                     return (
                                         <tr key={i} className={cn(
                                             "transition-colors group",
                                             isSelected ? "bg-[#4ade80]/5" : "hover:bg-slate-800/30"
                                         )}>
-                                            <td className="px-4 py-3">
-                                                <button onClick={() => toggleSelection(i)} className="text-slate-400 hover:text-white">
+                                            <td className="px-6 py-4">
+                                                <button onClick={() => toggleSelection(i)} className="text-slate-400 hover:text-white transition-colors">
                                                     {isSelected ? (
                                                         <CheckSquare className="w-5 h-5 text-[#4ade80]" />
                                                     ) : (
@@ -392,23 +457,23 @@ export function ImportPage() {
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="px-4 py-3 text-slate-300 whitespace-nowrap">{row.date}</td>
-                                            <td className="px-4 py-3 text-slate-300 max-w-[200px] truncate" title={row.description}>
+                                            <td className="px-6 py-4 text-slate-300 whitespace-nowrap font-medium">{row.date}</td>
+                                            <td className="px-6 py-4 text-slate-300 max-w-[250px] truncate" title={row.description}>
                                                 {row.description}
                                             </td>
                                             <td className={cn(
-                                                "px-4 py-3 text-right font-mono",
-                                                row.amount < 0 ? "text-red-400" : "text-[#4ade80]"
+                                                "px-6 py-4 text-right font-mono font-bold",
+                                                isExpense ? "text-red-400" : "text-[#4ade80]"
                                             )}>
-                                                {row.amount}
+                                                {effectiveAmount.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                                             </td>
-                                            <td className="px-4 py-2">
+                                            <td className="px-6 py-3">
                                                 <select
                                                     className={cn(
-                                                        "w-full p-1.5 rounded border text-xs focus:ring-1 focus:ring-[#4ade80] outline-none transition-colors",
+                                                        "w-full p-2 rounded-lg border text-xs focus:ring-1 focus:ring-[#4ade80] outline-none transition-all cursor-pointer",
                                                         row.accountId
-                                                            ? "bg-[#0b1121] border-slate-700 text-white"
-                                                            : "bg-red-500/10 border-red-500/50 text-red-200"
+                                                            ? "bg-[#0b1121] border-slate-700 text-slate-200 hover:border-slate-500"
+                                                            : "bg-red-500/10 border-red-500/50 text-red-200 animate-pulse"
                                                     )}
                                                     value={row.accountId || ''}
                                                     onChange={(e) => handleRowUpdate(i, 'accountId', e.target.value)}
@@ -419,9 +484,9 @@ export function ImportPage() {
                                                     ))}
                                                 </select>
                                             </td>
-                                            <td className="px-4 py-2">
+                                            <td className="px-6 py-3">
                                                 <select
-                                                    className="w-full p-1.5 rounded border border-slate-700 bg-[#0b1121] text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    className="w-full p-2 rounded-lg border border-slate-700 bg-[#0b1121] text-slate-200 text-xs focus:ring-1 focus:ring-[#4ade80] outline-none transition-all cursor-pointer hover:border-slate-500"
                                                     value={row.categoryId || ''}
                                                     onChange={(e) => handleRowUpdate(i, 'categoryId', e.target.value)}
                                                 >
@@ -436,8 +501,14 @@ export function ImportPage() {
                                 })}
                                 {previewData.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
-                                            Sube un archivo CSV para ver los datos aquí.
+                                        <td colSpan={6} className="px-6 py-24 text-center text-slate-500">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="p-4 bg-slate-800/50 rounded-full">
+                                                    <Upload className="w-8 h-8 opacity-50" />
+                                                </div>
+                                                <p className="text-lg font-medium">No hay datos para mostrar</p>
+                                                <p className="text-sm max-w-xs mx-auto">Sube un archivo CSV en el panel de la izquierda para comenzar a clasificar.</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}

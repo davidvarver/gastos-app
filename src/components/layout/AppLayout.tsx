@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Settings, Wallet } from 'lucide-react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Settings, Wallet, PiggyBank } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -9,11 +9,12 @@ const navItems = [
     { href: '/recurring', label: 'Fijos', icon: Calendar },
     { href: '/categories', label: 'Categorías', icon: Tag },
     { href: '/accounts', label: 'Bolsas', icon: Wallet },
+    { href: '/savings', label: 'Metas', icon: PiggyBank },
     { href: '/import', label: 'Importar', icon: Upload },
     // { href: '/settings', label: 'Ajustes', icon: Settings }, // Settings not implemented yet
 ];
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout() {
     const location = useLocation();
 
     return (
@@ -22,7 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Main Content Area */}
             <main className="flex-1 overflow-auto relative pb-20 md:pb-0">
                 <div className="p-4 md:p-8 max-w-5xl mx-auto">
-                    {children}
+                    <Outlet />
                 </div>
             </main>
 

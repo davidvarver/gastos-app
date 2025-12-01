@@ -29,7 +29,10 @@ export function useAccounts() {
                 currentBalance: Number(a.current_balance),
                 color: a.color,
                 defaultIncomeMaaserable: a.default_income_maaserable,
-                defaultExpenseDeductible: a.default_expense_deductible
+                defaultExpenseDeductible: a.default_expense_deductible,
+                isSavingsGoal: a.is_savings_goal,
+                targetAmount: a.target_amount ? Number(a.target_amount) : undefined,
+                deadline: a.deadline ? new Date(a.deadline) : undefined
             }));
 
             setAccounts(mappedAccounts);
@@ -68,7 +71,10 @@ export function useAccounts() {
             current_balance: account.initialBalance,
             color: account.color,
             default_income_maaserable: account.defaultIncomeMaaserable,
-            default_expense_deductible: account.defaultExpenseDeductible
+            default_expense_deductible: account.defaultExpenseDeductible,
+            is_savings_goal: account.isSavingsGoal,
+            target_amount: account.targetAmount,
+            deadline: account.deadline
         };
 
         const { data, error } = await supabase.from('accounts').insert([dbAccount]).select().single();
@@ -85,7 +91,10 @@ export function useAccounts() {
                 currentBalance: Number(data.current_balance),
                 color: data.color,
                 defaultIncomeMaaserable: data.default_income_maaserable,
-                defaultExpenseDeductible: data.default_expense_deductible
+                defaultExpenseDeductible: data.default_expense_deductible,
+                isSavingsGoal: data.is_savings_goal,
+                targetAmount: data.target_amount ? Number(data.target_amount) : undefined,
+                deadline: data.deadline ? new Date(data.deadline) : undefined
             };
             setAccounts(prev => [...(prev || []), newAccount].sort((a, b) => a.name.localeCompare(b.name)));
         }
@@ -101,6 +110,9 @@ export function useAccounts() {
         if (updates.color) dbUpdates.color = updates.color;
         if (updates.defaultIncomeMaaserable !== undefined) dbUpdates.default_income_maaserable = updates.defaultIncomeMaaserable;
         if (updates.defaultExpenseDeductible !== undefined) dbUpdates.default_expense_deductible = updates.defaultExpenseDeductible;
+        if (updates.isSavingsGoal !== undefined) dbUpdates.is_savings_goal = updates.isSavingsGoal;
+        if (updates.targetAmount !== undefined) dbUpdates.target_amount = updates.targetAmount;
+        if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline;
 
         const { error } = await supabase.from('accounts').update(dbUpdates).eq('id', id);
         if (error) throw error;

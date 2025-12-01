@@ -11,6 +11,11 @@ export interface Account {
     color?: string;
     defaultIncomeMaaserable?: boolean; // If true, income in this account defaults to Maaserable
     defaultExpenseDeductible?: boolean; // If true, expenses in this account default to Deductible
+
+    // Savings Goals Fields
+    isSavingsGoal?: boolean;
+    targetAmount?: number;
+    deadline?: Date;
 }
 
 export interface Category {
