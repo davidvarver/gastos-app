@@ -412,10 +412,26 @@ export function TransactionsPage() {
                                         {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {isMaaserRelevant && (
-                                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold" title={tx.type === 'income' ? "Aplica Maaser" : "Deducible de Maaser"}>
-                                                M
-                                            </span>
+                                        {isEditMode ? (
+                                            <input
+                                                type="checkbox"
+                                                className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500 transition-all cursor-pointer"
+                                                checked={!!isMaaserRelevant}
+                                                onChange={async (e) => {
+                                                    const newVal = e.target.checked;
+                                                    if (tx.type === 'income') {
+                                                        await updateTransaction(tx.id, { isMaaserable: newVal });
+                                                    } else {
+                                                        await updateTransaction(tx.id, { isDeductible: newVal });
+                                                    }
+                                                }}
+                                            />
+                                        ) : (
+                                            isMaaserRelevant && (
+                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold" title={tx.type === 'income' ? "Aplica Maaser" : "Deducible de Maaser"}>
+                                                    M
+                                                </span>
+                                            )
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-center">
