@@ -1,17 +1,26 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { subMonths, isAfter, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
 export function ExpensesPieChart() {
     const { transactions, categories } = useTransactions();
+    const [timeRange, setTimeRange] = useState<1 | 3 | 6 | 12>(1);
 
     const data = useMemo(() => {
         if (!transactions || !categories) return [];
 
-        const expenses = transactions.filter(t => t.type === 'expense');
+        const cutoffDate = startOfDay(subMonths(new Date(), timeRange));
+
+        const expenses = transactions.filter(t =>
+            t.type === 'expense' &&
+            isAfter(new Date(t.date), cutoffDate)
+        );
+
         const categoryTotals: Record<string, number> = {};
 
         expenses.forEach(tx => {
@@ -39,51 +48,60 @@ export function ExpensesPieChart() {
         }
 
         return chartData;
-    }, [transactions, categories]);
-
-    if (!data.length) {
-        return (
-            <Card className="bg-[#151e32] border-[#1e293b]">
-                <CardHeader>
-                    <CardTitle className="text-white">Gastos por Categoría</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px] flex items-center justify-center text-slate-500">
-                    No hay datos suficientes
-                </CardContent>
-            </Card>
-        );
-    }
+    }, [transactions, categories, timeRange]);
 
     return (
         <Card className="bg-[#151e32] border-[#1e293b]">
-            <CardHeader>
-                <CardTitle className="text-white">Gastos por Categoría</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-white text-lg">Gastos por Categoría</CardTitle>
+                <div className="flex bg-[#0b1121] rounded-lg p-1 border border-[#1e293b]">
+                    {[1, 3, 6, 12].map((range) => (
+                        <button
+                            key={range}
+                            onClick={() => setTimeRange(range as 1 | 3 | 6 | 12)}
+                            className={cn(
+                                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                                timeRange === range
+                                    ? "bg-[#1e293b] text-white shadow-sm"
+                                    : "text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/50"
+                            )}
+                        >
+                            {range}M
+                        </button>
+                    ))}
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={data}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#0b1121', borderColor: '#1e293b', color: '#fff' }}
-                                itemStyle={{ color: '#fff' }}
-                                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Monto']}
-                            />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    {!data.length ? (
+                        <div className="h-full flex items-center justify-center text-slate-500">
+                            No hay datos en este periodo
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0b1121', borderColor: '#1e293b', color: '#fff' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Monto']}
+                                />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </CardContent>
         </Card>

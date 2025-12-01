@@ -1,21 +1,28 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-export function IncomeVsExpenseChart() {
+interface IncomeVsExpenseChartProps {
+    onMonthClick?: (date: Date) => void;
+}
+
+export function IncomeVsExpenseChart({ onMonthClick }: IncomeVsExpenseChartProps) {
     const { transactions } = useTransactions();
+    const [timeRange, setTimeRange] = useState<3 | 6 | 12>(6);
 
     const data = useMemo(() => {
         if (!transactions) return [];
 
-        const last6Months = Array.from({ length: 6 }).map((_, i) => {
-            const date = subMonths(new Date(), 5 - i);
+        const months = Array.from({ length: timeRange }).map((_, i) => {
+            const date = subMonths(new Date(), timeRange - 1 - i);
             return {
                 monthObj: date,
                 name: format(date, 'MMM', { locale: es }),
+                fullName: format(date, 'MMMM yyyy', { locale: es }),
                 income: 0,
                 expense: 0
             };
@@ -23,7 +30,7 @@ export function IncomeVsExpenseChart() {
 
         transactions.forEach(tx => {
             const txDate = new Date(tx.date);
-            const monthData = last6Months.find(m =>
+            const monthData = months.find(m =>
                 isWithinInterval(txDate, {
                     start: startOfMonth(m.monthObj),
                     end: endOfMonth(m.monthObj)
@@ -36,13 +43,29 @@ export function IncomeVsExpenseChart() {
             }
         });
 
-        return last6Months;
-    }, [transactions]);
+        return months;
+    }, [transactions, timeRange]);
 
     return (
         <Card className="bg-[#151e32] border-[#1e293b]">
-            <CardHeader>
-                <CardTitle className="text-white">Ingresos vs Gastos (6 Meses)</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-white text-lg">Ingresos vs Gastos</CardTitle>
+                <div className="flex bg-[#0b1121] rounded-lg p-1 border border-[#1e293b]">
+                    {[3, 6, 12].map((range) => (
+                        <button
+                            key={range}
+                            onClick={() => setTimeRange(range as 3 | 6 | 12)}
+                            className={cn(
+                                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                                timeRange === range
+                                    ? "bg-[#1e293b] text-white shadow-sm"
+                                    : "text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/50"
+                            )}
+                        >
+                            {range}M
+                        </button>
+                    ))}
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">
@@ -50,6 +73,15 @@ export function IncomeVsExpenseChart() {
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            onClick={(state) => {
+                                if (state && state.activePayload && state.activePayload[0]) {
+                                    const payload = state.activePayload[0].payload;
+                                    if (payload && payload.monthObj && onMonthClick) {
+                                        onMonthClick(payload.monthObj);
+                                    }
+                                }
+                            }}
+                            className={cn(onMonthClick ? "cursor-pointer" : "")}
                         >
                             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                             <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
@@ -58,6 +90,12 @@ export function IncomeVsExpenseChart() {
                                 cursor={{ fill: '#1e293b', opacity: 0.4 }}
                                 contentStyle={{ backgroundColor: '#0b1121', borderColor: '#1e293b', color: '#fff' }}
                                 formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                labelFormatter={(label, payload) => {
+                                    if (payload && payload[0] && payload[0].payload) {
+                                        return payload[0].payload.fullName;
+                                    }
+                                    return label;
+                                }}
                             />
                             <Legend />
                             <Bar dataKey="income" name="Ingresos" fill="#4ade80" radius={[4, 4, 0, 0]} />

@@ -89,7 +89,7 @@ export function DashboardPage() {
             )}
 
             {/* Charts Section */}
-            <ChartsContainer />
+            <ChartsContainer onMonthClick={setCurrentDate} />
 
             {/* Recent Transactions Placeholder or other content could go here */}
         </div>
