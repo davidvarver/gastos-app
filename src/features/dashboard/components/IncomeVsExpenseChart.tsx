@@ -74,10 +74,12 @@ export function IncomeVsExpenseChart({ onMonthClick }: IncomeVsExpenseChartProps
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                             onClick={(state: any) => {
-                                if (state && state.activePayload && state.activePayload[0]) {
+                                // Recharts click handler can be tricky. 
+                                // We need to find the active payload which corresponds to the clicked bar.
+                                if (state && state.activePayload && state.activePayload.length > 0) {
                                     const payload = state.activePayload[0].payload;
                                     if (payload && payload.monthObj && onMonthClick) {
-                                        onMonthClick(payload.monthObj);
+                                        onMonthClick(new Date(payload.monthObj)); // Ensure it's a Date object
                                     }
                                 }
                             }}
@@ -89,7 +91,7 @@ export function IncomeVsExpenseChart({ onMonthClick }: IncomeVsExpenseChartProps
                             <Tooltip
                                 cursor={{ fill: '#1e293b', opacity: 0.4 }}
                                 contentStyle={{ backgroundColor: '#0b1121', borderColor: '#1e293b', color: '#fff' }}
-                                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                formatter={(value: number) => [`$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(value)}`, '']}
                                 labelFormatter={(label, payload) => {
                                     if (payload && payload[0] && payload[0].payload) {
                                         return payload[0].payload.fullName;

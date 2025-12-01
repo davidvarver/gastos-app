@@ -2,23 +2,38 @@ import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { subMonths, isAfter, startOfDay } from 'date-fns';
+import { subMonths, isWithinInterval, startOfMonth, endOfMonth, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
-export function ExpensesPieChart() {
+interface ExpensesPieChartProps {
+    currentDate: Date;
+}
+
+export function ExpensesPieChart({ currentDate }: ExpensesPieChartProps) {
     const { transactions, categories } = useTransactions();
     const [timeRange, setTimeRange] = useState<1 | 3 | 6 | 12>(1);
 
     const data = useMemo(() => {
         if (!transactions || !categories) return [];
 
-        const cutoffDate = startOfDay(subMonths(new Date(), timeRange));
+        let start: Date;
+        let end: Date;
+
+        if (timeRange === 1) {
+            // Current selected month
+            start = startOfMonth(currentDate);
+            end = endOfMonth(currentDate);
+        } else {
+            // Last X months ending in current selected month
+            start = startOfDay(subMonths(currentDate, timeRange - 1)); // -1 to include current month
+            end = endOfMonth(currentDate);
+        }
 
         const expenses = transactions.filter(t =>
             t.type === 'expense' &&
-            isAfter(new Date(t.date), cutoffDate)
+            isWithinInterval(new Date(t.date), { start, end })
         );
 
         const categoryTotals: Record<string, number> = {};
@@ -48,7 +63,7 @@ export function ExpensesPieChart() {
         }
 
         return chartData;
-    }, [transactions, categories, timeRange]);
+    }, [transactions, categories, timeRange, currentDate]);
 
     return (
         <Card className="bg-[#151e32] border-[#1e293b]">

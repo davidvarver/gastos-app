@@ -11,7 +11,7 @@ export function DashboardPage() {
     const { income, expense, net, maaser, isLoading } = useDashboard(currentDate);
 
     const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(amount);
 
     const handlePrevMonth = () => setCurrentDate(prev => subMonths(prev, 1));
     const handleNextMonth = () => setCurrentDate(prev => addMonths(prev, 1));
@@ -89,7 +89,7 @@ export function DashboardPage() {
             )}
 
             {/* Charts Section */}
-            <ChartsContainer onMonthClick={setCurrentDate} />
+            <ChartsContainer currentDate={currentDate} onMonthClick={setCurrentDate} />
 
             {/* Recent Transactions Placeholder or other content could go here */}
         </div>

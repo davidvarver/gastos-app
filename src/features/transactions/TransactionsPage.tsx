@@ -409,7 +409,7 @@ export function TransactionsPage() {
                                         "px-6 py-4 text-right font-bold font-mono",
                                         tx.type === 'income' ? "text-[#4ade80]" : "text-red-400"
                                     )}>
-                                        {tx.type === 'income' ? '+' : '-'}${tx.amount.toFixed(2)}
+                                        {tx.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(tx.amount)}
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         {isEditMode ? (
