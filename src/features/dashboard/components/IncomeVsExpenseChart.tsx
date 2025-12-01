@@ -73,7 +73,7 @@ export function IncomeVsExpenseChart({ onMonthClick }: IncomeVsExpenseChartProps
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            onClick={(state) => {
+                            onClick={(state: any) => {
                                 if (state && state.activePayload && state.activePayload[0]) {
                                     const payload = state.activePayload[0].payload;
                                     if (payload && payload.monthObj && onMonthClick) {
