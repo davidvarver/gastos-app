@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square, Save, X } from 'lucide-react';
 import { useTransactions } from './hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
+import { useCategories } from '@/features/categories/hooks/useCategories';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { TransactionModal } from './components/TransactionModal';
+import { AccountFormModal } from '@/features/accounts/components/AccountFormModal';
+import { CategoryFormModal } from '@/features/categories/components/CategoryFormModal';
 import { Transaction } from '@/db/db';
 
 export function TransactionsPage() {
     const { transactions, categories, addTransaction, deleteTransactions, updateTransaction } = useTransactions();
-    const { accounts, isLoading: accountsLoading } = useAccounts();
+    const { accounts, addAccount, isLoading: accountsLoading } = useAccounts();
+    const { addCategory } = useCategories();
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // Search State
@@ -19,6 +23,11 @@ export function TransactionsPage() {
     // Modal State
     const [editingTx, setEditingTx] = useState<Partial<Transaction> | undefined>(undefined);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Edit Mode State
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     // Filter State
     const [showFilters, setShowFilters] = useState(false);
@@ -139,6 +148,23 @@ export function TransactionsPage() {
         setSelectedIds(new Set());
     };
 
+    // Quick Edit Handlers
+    const handleQuickCategoryChange = async (txId: string, categoryId: string) => {
+        if (categoryId === '__new__') {
+            setIsCategoryModalOpen(true);
+            return;
+        }
+        await updateTransaction(txId, { categoryId });
+    };
+
+    const handleQuickAccountChange = async (txId: string, accountId: string) => {
+        if (accountId === '__new__') {
+            setIsAccountModalOpen(true);
+            return;
+        }
+        await updateTransaction(txId, { accountId });
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
@@ -156,6 +182,20 @@ export function TransactionsPage() {
                             Eliminar ({selectedIds.size})
                         </button>
                     )}
+
+                    <button
+                        onClick={() => setIsEditMode(!isEditMode)}
+                        className={cn(
+                            "px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border",
+                            isEditMode
+                                ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/50 hover:bg-yellow-500/30"
+                                : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                        )}
+                    >
+                        {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+                        {isEditMode ? 'Terminar Edición' : 'Editar'}
+                    </button>
+
                     <button
                         onClick={handleAdd}
                         disabled={accountsLoading}
@@ -317,25 +357,54 @@ export function TransactionsPage() {
                                     </td>
                                     <td className="px-6 py-4 font-medium text-white">{tx.description}</td>
                                     <td className="px-6 py-4">
-                                        {category ? (
-                                            <div className="flex flex-col items-start">
-                                                <span
-                                                    className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
-                                                    style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
-                                                >
-                                                    {category.name}
-                                                </span>
-                                                {tx.subcategoryId && (
-                                                    <span className="text-[10px] text-slate-400 mt-1 ml-1">
-                                                        {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
-                                                    </span>
-                                                )}
-                                            </div>
+                                        {isEditMode ? (
+                                            <select
+                                                className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                value={tx.categoryId || ''}
+                                                onChange={(e) => handleQuickCategoryChange(tx.id, e.target.value)}
+                                            >
+                                                <option value="">Sin Categoría</option>
+                                                {categories?.map(cat => (
+                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                ))}
+                                                <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Categoría</option>
+                                            </select>
                                         ) : (
-                                            <span className="text-slate-500 italic text-xs">Sin categoría</span>
+                                            category ? (
+                                                <div className="flex flex-col items-start">
+                                                    <span
+                                                        className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                                        style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
+                                                    >
+                                                        {category.name}
+                                                    </span>
+                                                    {tx.subcategoryId && (
+                                                        <span className="text-[10px] text-slate-400 mt-1 ml-1">
+                                                            {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-500 italic text-xs">Sin categoría</span>
+                                            )
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-slate-400">{account?.name || 'Unknown'}</td>
+                                    <td className="px-6 py-4 text-slate-400">
+                                        {isEditMode ? (
+                                            <select
+                                                className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                value={tx.accountId || ''}
+                                                onChange={(e) => handleQuickAccountChange(tx.id, e.target.value)}
+                                            >
+                                                {accounts?.map(acc => (
+                                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                                ))}
+                                                <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Cuenta</option>
+                                            </select>
+                                        ) : (
+                                            account?.name || 'Unknown'
+                                        )}
+                                    </td>
                                     <td className={cn(
                                         "px-6 py-4 text-right font-bold font-mono",
                                         tx.type === 'income' ? "text-[#4ade80]" : "text-red-400"
@@ -384,6 +453,25 @@ export function TransactionsPage() {
                     categories={categories}
                 />
             )}
+
+            {/* Quick Create Modals */}
+            <AccountFormModal
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                onSubmit={async (acc) => {
+                    await addAccount(acc as any);
+                    setIsAccountModalOpen(false);
+                }}
+            />
+
+            <CategoryFormModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setIsCategoryModalOpen(false)}
+                onSave={async (cat) => {
+                    await addCategory({ ...cat, icon: 'tag' } as any);
+                    setIsCategoryModalOpen(false);
+                }}
+            />
         </div>
     );
 }
