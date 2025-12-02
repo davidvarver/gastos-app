@@ -42,6 +42,18 @@ export function TransactionsPage() {
     });
 
     // Filter Logic
+    const [visibleColumns, setVisibleColumns] = useState({
+        date: true,
+        description: true,
+        category: true,
+        account: true,
+        amount: true,
+        maaser: true,
+        cardholder: true,
+        actions: true
+    });
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+
     const filteredTransactions = transactions?.filter(tx => {
         let matches = true;
 
@@ -241,6 +253,39 @@ export function TransactionsPage() {
                         <Filter className="w-4 h-4" />
                         Filtros
                     </button>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowColumnMenu(!showColumnMenu)}
+                            className="px-4 py-2 border border-slate-700 bg-[#151e32] text-slate-300 hover:bg-slate-800 rounded-xl flex items-center gap-2 transition-colors"
+                        >
+                            <span className="text-xs font-bold">Columnas</span>
+                        </button>
+
+                        {showColumnMenu && (
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-[#151e32] border border-slate-700 rounded-xl shadow-xl z-50 p-2 space-y-1">
+                                {Object.entries({
+                                    date: 'Fecha',
+                                    description: 'Descripción',
+                                    category: 'Categoría',
+                                    account: 'Cuenta',
+                                    amount: 'Monto',
+                                    maaser: 'Maaser',
+                                    cardholder: 'Tarjetahabiente'
+                                }).map(([key, label]) => (
+                                    <label key={key} className="flex items-center gap-2 p-2 hover:bg-slate-800 rounded-lg cursor-pointer text-slate-300 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-600 bg-slate-700 text-[#4ade80] focus:ring-[#4ade80]"
+                                            checked={visibleColumns[key as keyof typeof visibleColumns]}
+                                            onChange={() => setVisibleColumns(prev => ({ ...prev, [key]: !prev[key as keyof typeof visibleColumns] }))}
+                                        />
+                                        {label}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Filter Panel */}
@@ -327,13 +372,14 @@ export function TransactionsPage() {
                                     )}
                                 </button>
                             </th>
-                            <th className="px-6 py-4">Fecha</th>
-                            <th className="px-6 py-4">Descripción</th>
-                            <th className="px-6 py-4">Categoría</th>
-                            <th className="px-6 py-4">Cuenta</th>
-                            <th className="px-6 py-4 text-right">Monto</th>
-                            <th className="px-6 py-4 text-center">Maaser</th>
-                            <th className="px-6 py-4 text-center">Acciones</th>
+                            {visibleColumns.date && <th className="px-6 py-4">Fecha</th>}
+                            {visibleColumns.description && <th className="px-6 py-4">Descripción</th>}
+                            {visibleColumns.category && <th className="px-6 py-4">Categoría</th>}
+                            {visibleColumns.account && <th className="px-6 py-4">Cuenta</th>}
+                            {visibleColumns.cardholder && <th className="px-6 py-4">Tarjetahabiente</th>}
+                            {visibleColumns.amount && <th className="px-6 py-4 text-right">Monto</th>}
+                            {visibleColumns.maaser && <th className="px-6 py-4 text-center">Maaser</th>}
+                            {visibleColumns.actions && <th className="px-6 py-4 text-center">Acciones</th>}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#1e293b]">
@@ -359,99 +405,128 @@ export function TransactionsPage() {
                                             )}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-300">
-                                        {format(tx.date, 'dd MMM yyyy', { locale: es })}
-                                    </td>
-                                    <td className="px-6 py-4 font-medium text-white">{tx.description}</td>
-                                    <td className="px-6 py-4">
-                                        {isEditMode ? (
-                                            <select
-                                                className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
-                                                value={tx.categoryId || ''}
-                                                onChange={(e) => handleQuickCategoryChange(tx.id, e.target.value)}
-                                            >
-                                                <option value="">Sin Categoría</option>
-                                                {categories?.map(cat => (
-                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                ))}
-                                                <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Categoría</option>
-                                            </select>
-                                        ) : (
-                                            category ? (
-                                                <div className="flex flex-col items-start">
-                                                    <span
-                                                        className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
-                                                        style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
-                                                    >
-                                                        {category.name}
-                                                    </span>
-                                                    {tx.subcategoryId && (
-                                                        <span className="text-[10px] text-slate-400 mt-1 ml-1">
-                                                            {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                    {visibleColumns.date && (
+                                        <td className="px-6 py-4 text-slate-300">
+                                            {format(tx.date, 'dd MMM yyyy', { locale: es })}
+                                        </td>
+                                    )}
+                                    {visibleColumns.description && (
+                                        <td className="px-6 py-4 font-medium text-white">{tx.description}</td>
+                                    )}
+                                    {visibleColumns.category && (
+                                        <td className="px-6 py-4">
+                                            {isEditMode ? (
+                                                <select
+                                                    className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    value={tx.categoryId || ''}
+                                                    onChange={(e) => handleQuickCategoryChange(tx.id, e.target.value)}
+                                                >
+                                                    <option value="">Sin Categoría</option>
+                                                    {categories?.map(cat => (
+                                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                    ))}
+                                                    <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Categoría</option>
+                                                </select>
                                             ) : (
-                                                <span className="text-slate-500 italic text-xs">Sin categoría</span>
-                                            )
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-400">
-                                        {isEditMode ? (
-                                            <select
-                                                className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
-                                                value={tx.accountId || ''}
-                                                onChange={(e) => handleQuickAccountChange(tx.id, e.target.value)}
-                                            >
-                                                {accounts?.map(acc => (
-                                                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                                ))}
-                                                <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Cuenta</option>
-                                            </select>
-                                        ) : (
-                                            account?.name || 'Unknown'
-                                        )}
-                                    </td>
-                                    <td className={cn(
-                                        "px-6 py-4 text-right font-bold font-mono",
-                                        tx.type === 'income' ? "text-[#4ade80]" : "text-red-400"
-                                    )}>
-                                        {tx.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(tx.amount)}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        {isEditMode ? (
-                                            <input
-                                                type="checkbox"
-                                                className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500 transition-all cursor-pointer"
-                                                checked={!!isMaaserRelevant}
-                                                onChange={async (e) => {
-                                                    const newVal = e.target.checked;
-                                                    if (tx.type === 'income') {
-                                                        await updateTransaction(tx.id, { isMaaserable: newVal });
-                                                    } else {
-                                                        await updateTransaction(tx.id, { isDeductible: newVal });
-                                                    }
-                                                }}
-                                            />
-                                        ) : (
-                                            isMaaserRelevant && (
-                                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold" title={tx.type === 'income' ? "Aplica Maaser" : "Deducible de Maaser"}>
-                                                    M
-                                                </span>
-                                            )
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => openEditModal(tx)}
-                                                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                                                title="Editar"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </td>
+                                                category ? (
+                                                    <div className="flex flex-col items-start">
+                                                        <span
+                                                            className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                                            style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
+                                                        >
+                                                            {category.name}
+                                                        </span>
+                                                        {tx.subcategoryId && (
+                                                            <span className="text-[10px] text-slate-400 mt-1 ml-1">
+                                                                {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-500 italic text-xs">Sin categoría</span>
+                                                )
+                                            )}
+                                        </td>
+                                    )}
+                                    {visibleColumns.account && (
+                                        <td className="px-6 py-4 text-slate-400">
+                                            {isEditMode ? (
+                                                <select
+                                                    className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    value={tx.accountId || ''}
+                                                    onChange={(e) => handleQuickAccountChange(tx.id, e.target.value)}
+                                                >
+                                                    {accounts?.map(acc => (
+                                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                                    ))}
+                                                    <option value="__new__" className="font-bold text-[#4ade80]">+ Nueva Cuenta</option>
+                                                </select>
+                                            ) : (
+                                                account?.name || 'Unknown'
+                                            )}
+                                        </td>
+                                    )}
+                                    {visibleColumns.cardholder && (
+                                        <td className="px-6 py-4 text-slate-400 text-xs">
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    value={tx.cardholder || ''}
+                                                    onChange={async (e) => await updateTransaction(tx.id, { cardholder: e.target.value })}
+                                                    placeholder="Opcional"
+                                                />
+                                            ) : (
+                                                tx.cardholder || '-'
+                                            )}
+                                        </td>
+                                    )}
+                                    {visibleColumns.amount && (
+                                        <td className={cn(
+                                            "px-6 py-4 text-right font-bold font-mono",
+                                            tx.type === 'income' ? "text-[#4ade80]" : "text-red-400"
+                                        )}>
+                                            {tx.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(tx.amount)}
+                                        </td>
+                                    )}
+                                    {visibleColumns.maaser && (
+                                        <td className="px-6 py-4 text-center">
+                                            {isEditMode ? (
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-5 h-5 rounded border-slate-600 bg-slate-700 text-purple-500 focus:ring-purple-500 transition-all cursor-pointer"
+                                                    checked={!!isMaaserRelevant}
+                                                    onChange={async (e) => {
+                                                        const newVal = e.target.checked;
+                                                        if (tx.type === 'income') {
+                                                            await updateTransaction(tx.id, { isMaaserable: newVal });
+                                                        } else {
+                                                            await updateTransaction(tx.id, { isDeductible: newVal });
+                                                        }
+                                                    }}
+                                                />
+                                            ) : (
+                                                isMaaserRelevant && (
+                                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold" title={tx.type === 'income' ? "Aplica Maaser" : "Deducible de Maaser"}>
+                                                        M
+                                                    </span>
+                                                )
+                                            )}
+                                        </td>
+                                    )}
+                                    {visibleColumns.actions && (
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => openEditModal(tx)}
+                                                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                                                    title="Editar"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}
