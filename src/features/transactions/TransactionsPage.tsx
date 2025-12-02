@@ -352,6 +352,16 @@ export function TransactionsPage() {
                                 <option value="deductible">Gastos Deducibles</option>
                             </select>
                         </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-slate-400">Tarjetahabiente</label>
+                            <input
+                                type="text"
+                                className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                value={filters.cardholder}
+                                onChange={e => setFilters({ ...filters, cardholder: e.target.value })}
+                                placeholder="Ej: David"
+                            />
+                        </div>
                         <div className="space-y-1 md:col-span-5 flex justify-end">
                             <button
                                 onClick={() => setFilters({ startDate: '', endDate: '', type: 'all', accountId: 'all', categoryId: 'all', maaser: 'all', cardholder: '' })}
