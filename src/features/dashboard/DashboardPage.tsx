@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDashboard } from './hooks/useDashboard';
-import { ChartsContainer } from './components/ChartsContainer';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { useAccounts } from '@/features/accounts/hooks/useAccounts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ChartsContainer } from './components/ChartsContainer';
 import { cn } from '@/lib/utils';
 
 export function DashboardPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const { income, expense, net, maaser, isLoading } = useDashboard(currentDate);
+    const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
+    const { accounts } = useAccounts();
+    const { income, expense, net, maaser, isLoading } = useDashboard(currentDate, selectedAccountId);
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(amount);
@@ -16,80 +20,102 @@ export function DashboardPage() {
     const handlePrevMonth = () => setCurrentDate(prev => subMonths(prev, 1));
     const handleNextMonth = () => setCurrentDate(prev => addMonths(prev, 1));
 
-    if (isLoading) return <div className="flex items-center justify-center h-96 text-slate-400">Cargando...</div>;
-
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header / Month Selector */}
-            <div className="flex items-center justify-between bg-[#151e32] p-4 rounded-2xl border border-[#1e293b] shadow-lg">
-                <button onClick={handlePrevMonth} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
-                    <ChevronLeft className="w-5 h-5" />
-                </button>
-                <h2 className="text-lg font-semibold text-white capitalize">
-                    {format(currentDate, 'MMMM yyyy', { locale: es })}
-                </h2>
-                <button onClick={handleNextMonth} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
-                    <ChevronRight className="w-5 h-5" />
-                </button>
-            </div>
-
-            {/* Main Balance Card */}
-            <div className="bg-[#151e32] rounded-3xl p-8 border border-[#1e293b] shadow-xl relative overflow-hidden">
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-slate-800/50 rounded-lg">
-                            <Wallet className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <span className="text-slate-400 font-medium">Balance Mensual</span>
-                    </div>
-                    <div className={cn(
-                        "text-5xl font-bold tracking-tight mt-2",
-                        net >= 0 ? "text-[#4ade80]" : "text-red-500"
-                    )}>
-                        {formatCurrency(net)}
-                    </div>
+            {/* Header & Controls */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-white">Dashboard</h2>
+                    <p className="text-slate-400">Resumen financiero mensual.</p>
                 </div>
 
-                {/* Decorative Background Blur */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#4ade80] opacity-5 blur-[100px] rounded-full pointer-events-none" />
-
-                {/* Income / Expense Split */}
-                <div className="grid grid-cols-2 gap-4 mt-8">
-                    <div className="bg-[#0b1121]/50 p-4 rounded-2xl border border-[#1e293b]/50">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                            <TrendingUp className="w-4 h-4 text-[#4ade80]" />
-                            Ingresos
-                        </div>
-                        <div className="text-xl font-semibold text-white">{formatCurrency(income)}</div>
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Account Filter */}
+                    <div className="relative">
+                        <select
+                            value={selectedAccountId}
+                            onChange={(e) => setSelectedAccountId(e.target.value)}
+                            className="appearance-none bg-[#151e32] border border-[#1e293b] text-white text-sm rounded-xl pl-9 pr-8 py-2 focus:ring-2 focus:ring-[#4ade80] outline-none cursor-pointer hover:bg-[#1e293b] transition-colors"
+                        >
+                            <option value="all">Todas las Cuentas</option>
+                            {accounts?.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                            ))}
+                        </select>
+                        <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
-                    <div className="bg-[#0b1121]/50 p-4 rounded-2xl border border-[#1e293b]/50">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                            Gastos
-                        </div>
-                        <div className="text-xl font-semibold text-white">{formatCurrency(expense)}</div>
+
+                    {/* Month Navigator */}
+                    <div className="flex items-center bg-[#151e32] rounded-xl border border-[#1e293b] p-1">
+                        <button onClick={handlePrevMonth} className="p-1 hover:bg-[#1e293b] rounded-lg text-slate-400 hover:text-white transition-colors">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <span className="px-4 font-medium text-white min-w-[140px] text-center capitalize">
+                            {format(currentDate, 'MMMM yyyy', { locale: es })}
+                        </span>
+                        <button onClick={handleNextMonth} className="p-1 hover:bg-[#1e293b] rounded-lg text-slate-400 hover:text-white transition-colors">
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Maaser Card (Conditional) */}
-            {net > 0 && (
-                <div className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 rounded-2xl p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-violet-500/20 rounded-lg text-violet-400">
-                            <Wallet className="w-5 h-5" />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-[#151e32] border-[#1e293b]">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400">Ingresos</CardTitle>
+                        <ArrowUpCircle className="h-4 w-4 text-[#4ade80]" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-white">{isLoading ? '...' : formatCurrency(income)}</div>
+                        <p className="text-xs text-slate-500 mt-1">Este mes</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-[#151e32] border-[#1e293b]">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400">Gastos</CardTitle>
+                        <ArrowDownCircle className="h-4 w-4 text-red-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-white">{isLoading ? '...' : formatCurrency(expense)}</div>
+                        <p className="text-xs text-slate-500 mt-1">Este mes</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-[#151e32] border-[#1e293b]">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-400">Balance Neto</CardTitle>
+                        <Wallet className="h-4 w-4 text-blue-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn("text-2xl font-bold", net >= 0 ? "text-[#4ade80]" : "text-red-400")}>
+                            {isLoading ? '...' : formatCurrency(net)}
                         </div>
-                        <div>
-                            <div className="text-sm text-violet-200">Maaser (10%)</div>
-                            <div className="text-xs text-violet-400/60">Sugerido para donar</div>
-                        </div>
-                    </div>
-                    <div className="text-xl font-bold text-violet-300">{formatCurrency(maaser)}</div>
-                </div>
-            )}
+                        <p className="text-xs text-slate-500 mt-1">Este mes</p>
+                    </CardContent>
+                </Card>
+
+                {/* Maaser Card - Only show if relevant (positive income) or always show? User hasn't specified, keeping as is but maybe hidden if 0? */}
+                {/* Let's keep it visible for now as it's a key feature */}
+                <Card className="bg-[#151e32] border-[#1e293b] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-bl-full -mr-8 -mt-8" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-purple-400">Maaser (10%)</CardTitle>
+                        <span className="text-xs font-bold bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">M</span>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-white">{isLoading ? '...' : formatCurrency(maaser)}</div>
+                        <p className="text-xs text-slate-500 mt-1">Calculado sobre neto</p>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* Charts Section */}
-            <ChartsContainer currentDate={currentDate} onMonthClick={setCurrentDate} />
+            <ChartsContainer
+                currentDate={currentDate}
+                onMonthClick={setCurrentDate}
+                accountId={selectedAccountId}
+            />
 
             {/* Recent Transactions Placeholder or other content could go here */}
         </div>

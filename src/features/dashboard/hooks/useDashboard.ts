@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/features/auth/AuthProvider';
 
-export function useDashboard(date: Date = new Date()) {
+export function useDashboard(date: Date = new Date(), accountId?: string) {
     const [data, setData] = useState({
         income: 0,
         expense: 0,
@@ -23,11 +23,17 @@ export function useDashboard(date: Date = new Date()) {
 
         try {
             // Fetch Transactions for the month
-            const { data: transactions, error } = await supabase
+            let query = supabase
                 .from('transactions')
                 .select('*, categories(*)')
                 .gte('date', start)
                 .lte('date', end);
+
+            if (accountId && accountId !== 'all') {
+                query = query.eq('account_id', accountId);
+            }
+
+            const { data: transactions, error } = await query;
 
             if (error) throw error;
 
@@ -96,7 +102,7 @@ export function useDashboard(date: Date = new Date()) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [date, user]);
+    }, [date, user, accountId]);
 
     return data;
 }
