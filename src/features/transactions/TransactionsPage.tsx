@@ -421,13 +421,35 @@ export function TransactionsPage() {
                                         </button>
                                     </td>
                                     {visibleColumns.date && (
-                                        <td className="px-6 py-4 text-slate-300">
-                                            {format(tx.date, 'dd MMM yyyy', { locale: es })}
+                                        <td className="px-6 py-4 text-slate-300 whitespace-nowrap">
+                                            {isEditMode ? (
+                                                <input
+                                                    type="date"
+                                                    className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    value={tx.date.toISOString().split('T')[0]}
+                                                    onChange={async (e) => {
+                                                        if (e.target.value) {
+                                                            await updateTransaction(tx.id, { date: new Date(e.target.value) });
+                                                        }
+                                                    }}
+                                                />
+                                            ) : (
+                                                format(tx.date, 'dd MMM yyyy', { locale: es })
+                                            )}
                                         </td>
                                     )}
                                     {visibleColumns.description && (
                                         <td className="px-6 py-4 font-medium text-white max-w-[200px] truncate" title={tx.description}>
-                                            {tx.description}
+                                            {isEditMode ? (
+                                                <input
+                                                    type="text"
+                                                    className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                                    value={tx.description}
+                                                    onChange={async (e) => await updateTransaction(tx.id, { description: e.target.value })}
+                                                />
+                                            ) : (
+                                                tx.description
+                                            )}
                                         </td>
                                     )}
                                     {visibleColumns.category && (
