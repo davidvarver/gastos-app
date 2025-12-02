@@ -230,7 +230,6 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                                 </label>
                             </div>
                         )}
-                        )}
                     </div>
 
                     <div className="space-y-2">
