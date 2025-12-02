@@ -12,6 +12,7 @@ export function ImportPage() {
     const [globalAccountId, setGlobalAccountId] = useState<string>('');
     const [globalCategoryId, setGlobalCategoryId] = useState<string>('');
     const [globalCardholder, setGlobalCardholder] = useState<string>('');
+    const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
 
     // Bulk Selection State
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
@@ -33,6 +34,7 @@ export function ImportPage() {
                 if (f.name.toLowerCase().endsWith('.csv')) {
                     const result = await parseCSV(f);
                     parsedTransactions = result.transactions;
+                    setDetectedHeaders(result.headers || []);
                 }
 
                 if (parsedTransactions.length === 0) {
@@ -383,6 +385,13 @@ export function ImportPage() {
                         >
                             Confirmar Importación
                         </button>
+
+                        {detectedHeaders.length > 0 && (
+                            <div className="mt-4 p-4 bg-slate-800/50 rounded-xl text-xs font-mono text-slate-400 break-all">
+                                <p className="font-bold text-slate-300 mb-2">Debug: Encabezados Detectados</p>
+                                {detectedHeaders.join(', ')}
+                            </div>
+                        )}
                     </div>
                 </div>
 

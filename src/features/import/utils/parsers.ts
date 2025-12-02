@@ -11,6 +11,7 @@ export interface RawTransaction {
 export interface ImportResult {
     transactions: RawTransaction[];
     errors: string[];
+    headers?: string[];
 }
 
 export async function parseCSV(file: File): Promise<ImportResult> {
@@ -24,6 +25,11 @@ export async function parseCSV(file: File): Promise<ImportResult> {
 
                 // Detect format based on headers
                 const headers = results.meta.fields || [];
+                console.log("CSV Headers Detected:", headers);
+                if (results.data.length > 0) {
+                    console.log("First Row Sample:", results.data[0]);
+                }
+
                 const isAmex = headers.some(h => h.toLowerCase().includes('referencia') && h.toLowerCase().includes('monto'));
                 // Note: Amex Mexico often has 'Fecha', 'Referencia', 'Descripción', 'Monto', 'Divisa'
                 // Or sometimes just generic headers. Let's look for specific Amex patterns or user selection later.
@@ -89,7 +95,7 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                     }
                 });
 
-                resolve({ transactions, errors });
+                resolve({ transactions, errors, headers });
             },
             error: (error) => {
                 resolve({ transactions: [], errors: [error.message] });
