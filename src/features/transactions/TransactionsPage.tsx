@@ -251,15 +251,20 @@ export function TransactionsPage() {
                         )}
                     >
                         <Filter className="w-4 h-4" />
-                        Filtros
+                        <span className="text-sm font-medium">Filtros</span>
                     </button>
 
                     <div className="relative">
                         <button
                             onClick={() => setShowColumnMenu(!showColumnMenu)}
-                            className="px-4 py-2 border border-slate-700 bg-[#151e32] text-slate-300 hover:bg-slate-800 rounded-xl flex items-center gap-2 transition-colors"
+                            className={cn(
+                                "px-4 py-2 border rounded-xl flex items-center gap-2 transition-colors",
+                                showColumnMenu
+                                    ? "bg-[#4ade80] text-[#0b1121] border-[#4ade80] font-bold"
+                                    : "border-slate-700 bg-[#151e32] text-slate-300 hover:bg-slate-800"
+                            )}
                         >
-                            <span className="text-xs font-bold">Columnas</span>
+                            <span className="text-sm font-medium">Columnas</span>
                         </button>
 
                         {showColumnMenu && (
@@ -372,13 +377,13 @@ export function TransactionsPage() {
                                     )}
                                 </button>
                             </th>
-                            {visibleColumns.date && <th className="px-6 py-4">Fecha</th>}
+                            {visibleColumns.date && <th className="px-6 py-4 whitespace-nowrap">Fecha</th>}
                             {visibleColumns.description && <th className="px-6 py-4">Descripción</th>}
                             {visibleColumns.category && <th className="px-6 py-4">Categoría</th>}
                             {visibleColumns.account && <th className="px-6 py-4">Cuenta</th>}
                             {visibleColumns.cardholder && <th className="px-6 py-4">Tarjetahabiente</th>}
                             {visibleColumns.amount && <th className="px-6 py-4 text-right">Monto</th>}
-                            {visibleColumns.maaser && <th className="px-6 py-4 text-center">Maaser</th>}
+                            {visibleColumns.maaser && <th className="px-6 py-4 text-center w-20">Maaser</th>}
                             {visibleColumns.actions && <th className="px-6 py-4 text-center">Acciones</th>}
                         </tr>
                     </thead>
@@ -411,10 +416,12 @@ export function TransactionsPage() {
                                         </td>
                                     )}
                                     {visibleColumns.description && (
-                                        <td className="px-6 py-4 font-medium text-white">{tx.description}</td>
+                                        <td className="px-6 py-4 font-medium text-white max-w-[200px] truncate" title={tx.description}>
+                                            {tx.description}
+                                        </td>
                                     )}
                                     {visibleColumns.category && (
-                                        <td className="px-6 py-4">
+                                        <td className="px-6 py-4 whitespace-nowrap">
                                             {isEditMode ? (
                                                 <select
                                                     className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
@@ -431,13 +438,13 @@ export function TransactionsPage() {
                                                 category ? (
                                                     <div className="flex flex-col items-start">
                                                         <span
-                                                            className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                                            className="px-2.5 py-1 rounded-full text-xs font-medium text-white shadow-sm whitespace-nowrap"
                                                             style={{ backgroundColor: category.color, boxShadow: `0 0 10px ${category.color}40` }}
                                                         >
                                                             {category.name}
                                                         </span>
                                                         {tx.subcategoryId && (
-                                                            <span className="text-[10px] text-slate-400 mt-1 ml-1">
+                                                            <span className="text-[10px] text-slate-400 mt-1 ml-1 whitespace-nowrap">
                                                                 {category.subcategories?.find(s => s.id === tx.subcategoryId)?.name}
                                                             </span>
                                                         )}
@@ -449,7 +456,7 @@ export function TransactionsPage() {
                                         </td>
                                     )}
                                     {visibleColumns.account && (
-                                        <td className="px-6 py-4 text-slate-400">
+                                        <td className="px-6 py-4 text-slate-400 whitespace-nowrap">
                                             {isEditMode ? (
                                                 <select
                                                     className="w-full p-2 rounded-lg bg-[#0b1121] border border-slate-700 text-white text-xs focus:ring-1 focus:ring-[#4ade80] outline-none"
@@ -467,7 +474,7 @@ export function TransactionsPage() {
                                         </td>
                                     )}
                                     {visibleColumns.cardholder && (
-                                        <td className="px-6 py-4 text-slate-400 text-xs">
+                                        <td className="px-6 py-4 text-slate-400 text-xs max-w-[150px] truncate" title={tx.cardholder}>
                                             {isEditMode ? (
                                                 <input
                                                     type="text"
