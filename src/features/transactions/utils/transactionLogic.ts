@@ -20,6 +20,7 @@ export interface TransactionInput {
     isSystemGenerated?: boolean;
     isMaaserable?: boolean;
     isDeductible?: boolean;
+    cardholder?: string;
 }
 
 export interface AccountContext {
@@ -65,7 +66,8 @@ export function calculateTransactionEffects(
         notes: txData.notes,
         is_system_generated: txData.isSystemGenerated ?? false,
         is_maaserable: isMaaserable,
-        is_deductible: isDeductible
+        is_deductible: isDeductible,
+        cardholder: txData.cardholder
     };
     txsToInsert.push(dbTx);
 
