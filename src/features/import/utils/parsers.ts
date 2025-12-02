@@ -35,18 +35,37 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                 // So Amex CSV has positive for expenses?
                 // Let's assume we need a toggle or auto-detect.
 
+                // Helper to find value by fuzzy header match
+                const getColumnValue = (row: any, possibleHeaders: string[]) => {
+                    const rowKeys = Object.keys(row);
+                    for (const header of possibleHeaders) {
+                        // 1. Exact match
+                        if (row[header] !== undefined) return row[header];
+
+                        // 2. Case insensitive match
+                        const key = rowKeys.find(k => k.toLowerCase() === header.toLowerCase());
+                        if (key) return row[key];
+
+                        // 3. Partial match (if header is long enough to be specific)
+                        if (header.length > 4) {
+                            const partialKey = rowKeys.find(k => k.toLowerCase().includes(header.toLowerCase()));
+                            if (partialKey) return row[partialKey];
+                        }
+                    }
+                    return undefined;
+                };
+
                 results.data.forEach((row: any) => {
                     try {
                         // Normalize Date
-                        // Try common formats
-                        let dateStr = row['Fecha'] || row['Date'] || row['FECHA'];
-                        // Simple date parsing (improve later with date-fns)
+                        let dateStr = getColumnValue(row, ['Fecha', 'Date', 'FECHA']);
 
                         // Normalize Description
-                        let description = row['Descripción'] || row['Description'] || row['Concepto'] || row['CONCEPTO'] || 'Sin descripción';
+                        // Add 'Descripci' to catch 'DescripciÃ³n' encoding errors
+                        let description = getColumnValue(row, ['Descripción', 'Description', 'Concepto', 'CONCEPTO', 'Descripci']) || 'Sin descripción';
 
                         // Normalize Amount
-                        let amountStr = row['Monto'] || row['Amount'] || row['Importe'] || row['IMPORTE'];
+                        let amountStr = getColumnValue(row, ['Monto', 'Amount', 'Importe', 'IMPORTE']);
                         if (!amountStr) return;
 
                         // Clean currency symbols
@@ -55,7 +74,8 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                         if (isNaN(amount)) return;
 
                         // Normalize Cardholder
-                        let cardholder = row['Tarjetahabiente'] || row['Cardholder'] || row['Titular'] || row['Nombre'] || undefined;
+                        // Added 'Titular de la Tarjeta' specifically for Amex
+                        let cardholder = getColumnValue(row, ['Tarjetahabiente', 'Cardholder', 'Titular de la Tarjeta', 'Titular', 'Nombre']);
 
                         transactions.push({
                             date: dateStr,
