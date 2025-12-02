@@ -4,6 +4,7 @@ export interface RawTransaction {
     date: string;
     description: string;
     amount: number;
+    cardholder?: string;
     originalLine: any;
 }
 
@@ -53,10 +54,14 @@ export async function parseCSV(file: File): Promise<ImportResult> {
 
                         if (isNaN(amount)) return;
 
+                        // Normalize Cardholder
+                        let cardholder = row['Tarjetahabiente'] || row['Cardholder'] || row['Titular'] || row['Nombre'] || undefined;
+
                         transactions.push({
                             date: dateStr,
                             description,
                             amount,
+                            cardholder,
                             originalLine: row
                         });
                     } catch (e) {

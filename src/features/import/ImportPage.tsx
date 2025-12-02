@@ -11,11 +11,13 @@ export function ImportPage() {
     const [isAmex, setIsAmex] = useState(false);
     const [globalAccountId, setGlobalAccountId] = useState<string>('');
     const [globalCategoryId, setGlobalCategoryId] = useState<string>('');
+    const [globalCardholder, setGlobalCardholder] = useState<string>('');
 
     // Bulk Selection State
     const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
     const [bulkAccountId, setBulkAccountId] = useState<string>('');
     const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
+    const [bulkCardholder, setBulkCardholder] = useState<string>('');
 
     const { accounts } = useAccounts();
     const { addTransactions, categories, transactions } = useTransactions();
@@ -42,7 +44,8 @@ export function ImportPage() {
                 setPreviewData(parsedTransactions.map(t => ({
                     ...t,
                     accountId: globalAccountId,
-                    categoryId: globalCategoryId
+                    categoryId: globalCategoryId,
+                    cardholder: t.cardholder || globalCardholder
                 })));
                 setSelectedIndices(new Set());
             } catch (error: any) {
@@ -82,7 +85,8 @@ export function ImportPage() {
                 return {
                     ...row,
                     accountId: bulkAccountId || row.accountId,
-                    categoryId: bulkCategoryId || row.categoryId
+                    categoryId: bulkCategoryId || row.categoryId,
+                    cardholder: bulkCardholder || row.cardholder
                 };
             }
             return row;
@@ -93,6 +97,7 @@ export function ImportPage() {
         setSelectedIndices(new Set());
         setBulkAccountId('');
         setBulkCategoryId('');
+        setBulkCardholder('');
     };
 
     // Global Updates (still useful for initial setup)
@@ -106,8 +111,13 @@ export function ImportPage() {
         setPreviewData(prev => prev.map(row => ({ ...row, categoryId: newCategoryId })));
     };
 
+    const handleGlobalCardholderChange = (newCardholder: string) => {
+        setGlobalCardholder(newCardholder);
+        setPreviewData(prev => prev.map(row => ({ ...row, cardholder: newCardholder })));
+    };
+
     // Row Updates
-    const handleRowUpdate = (index: number, field: 'accountId' | 'categoryId', value: string) => {
+    const handleRowUpdate = (index: number, field: 'accountId' | 'categoryId' | 'cardholder', value: string) => {
         setPreviewData(prev => {
             const newData = [...prev];
             newData[index] = { ...newData[index], [field]: value };
@@ -143,7 +153,8 @@ export function ImportPage() {
                 return {
                     ...row,
                     categoryId: match.categoryId || row.categoryId,
-                    accountId: match.accountId || row.accountId
+                    accountId: match.accountId || row.accountId,
+                    cardholder: match.cardholder || row.cardholder
                 };
             }
             return row;
@@ -197,6 +208,7 @@ export function ImportPage() {
                 type,
                 accountId: tx.accountId,
                 categoryId: tx.categoryId,
+                cardholder: tx.cardholder,
                 status: 'cleared' as const,
                 isMaaserable: false, // Default to false for imports to avoid unwanted auto-deductions
                 isDeductible: false
@@ -210,6 +222,7 @@ export function ImportPage() {
             setFile(null);
             setGlobalAccountId('');
             setGlobalCategoryId('');
+            setGlobalCardholder('');
             setSelectedIndices(new Set());
         } catch (error: any) {
             console.error("Import failed:", error);
@@ -335,6 +348,17 @@ export function ImportPage() {
                                 </select>
                             </div>
 
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tarjetahabiente por Defecto</label>
+                                <input
+                                    type="text"
+                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none transition-all"
+                                    value={globalCardholder}
+                                    onChange={(e) => handleGlobalCardholderChange(e.target.value)}
+                                    placeholder="Ej: David"
+                                />
+                            </div>
+
                             <label className={cn(
                                 "flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer",
                                 isAmex ? "bg-[#4ade80]/10 border-[#4ade80]/50" : "bg-slate-800/30 border-slate-700 hover:bg-slate-800/50"
@@ -393,6 +417,14 @@ export function ImportPage() {
                                 ))}
                             </select>
 
+                            <input
+                                type="text"
+                                className="flex-1 min-w-[150px] p-2 rounded-lg border border-[#4ade80]/30 bg-[#0b1121] text-white text-sm focus:ring-1 focus:ring-[#4ade80] outline-none"
+                                value={bulkCardholder}
+                                onChange={(e) => setBulkCardholder(e.target.value)}
+                                placeholder="Cambiar Tarjetahabiente..."
+                            />
+
                             <button
                                 onClick={applyBulkUpdate}
                                 className="bg-[#4ade80] text-[#0b1121] font-bold px-6 py-2 rounded-lg hover:bg-[#4ade80]/90 transition-colors text-sm shadow-lg shadow-[#4ade80]/10"
@@ -436,6 +468,7 @@ export function ImportPage() {
                                     <th className="px-6 py-4 text-right">Monto</th>
                                     <th className="px-6 py-4 w-[200px]">Cuenta</th>
                                     <th className="px-6 py-4 w-[200px]">Categoría</th>
+                                    <th className="px-6 py-4 w-[150px]">Tarjetahabiente</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#1e293b]">
@@ -495,6 +528,15 @@ export function ImportPage() {
                                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                                     ))}
                                                 </select>
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <input
+                                                    type="text"
+                                                    className="w-full p-2 rounded-lg border border-slate-700 bg-[#0b1121] text-slate-200 text-xs focus:ring-1 focus:ring-[#4ade80] outline-none transition-all hover:border-slate-500"
+                                                    value={row.cardholder || ''}
+                                                    onChange={(e) => handleRowUpdate(i, 'cardholder', e.target.value)}
+                                                    placeholder="Opcional"
+                                                />
                                             </td>
                                         </tr>
                                     );
