@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 interface IncomeVsExpenseChartProps {
     onMonthClick?: (date: Date) => void;
     accountId?: string;
+    cardholder?: string;
 }
 
-export function IncomeVsExpenseChart({ onMonthClick, accountId }: IncomeVsExpenseChartProps) {
+export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: IncomeVsExpenseChartProps) {
     const { transactions } = useTransactions();
     const [timeRange, setTimeRange] = useState<3 | 6 | 12>(6);
 
@@ -32,6 +33,9 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId }: IncomeVsExpens
         transactions.forEach(tx => {
             // Account Filter
             if (accountId && accountId !== 'all' && tx.accountId !== accountId) return;
+
+            // Cardholder Filter
+            if (cardholder && cardholder !== 'all' && (!tx.cardholder || !tx.cardholder.toLowerCase().includes(cardholder.toLowerCase()))) return;
 
             const txDate = new Date(tx.date);
             const monthData = months.find(m =>

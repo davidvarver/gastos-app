@@ -10,9 +10,10 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 interface ExpensesPieChartProps {
     currentDate: Date;
     accountId?: string;
+    cardholder?: string;
 }
 
-export function ExpensesPieChart({ currentDate, accountId }: ExpensesPieChartProps) {
+export function ExpensesPieChart({ currentDate, accountId, cardholder }: ExpensesPieChartProps) {
     const { transactions, categories } = useTransactions();
     const [timeRange, setTimeRange] = useState<1 | 3 | 6 | 12>(1);
     const [viewMode, setViewMode] = useState<'category' | 'subcategory'>('category');
@@ -36,7 +37,8 @@ export function ExpensesPieChart({ currentDate, accountId }: ExpensesPieChartPro
         const expenses = transactions.filter(t =>
             t.type === 'expense' &&
             isWithinInterval(new Date(t.date), { start, end }) &&
-            (!accountId || accountId === 'all' || t.accountId === accountId)
+            (!accountId || accountId === 'all' || t.accountId === accountId) &&
+            (!cardholder || cardholder === 'all' || (t.cardholder && t.cardholder.toLowerCase().includes(cardholder.toLowerCase())))
         );
 
         const totals: Record<string, number> = {};

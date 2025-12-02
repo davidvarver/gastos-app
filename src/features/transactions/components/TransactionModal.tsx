@@ -230,6 +230,18 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                                 </label>
                             </div>
                         )}
+                        )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-slate-400 uppercase">Tarjetahabiente (Opcional)</label>
+                        <input
+                            type="text"
+                            className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
+                            value={formData.cardholder || ''}
+                            onChange={e => setFormData({ ...formData, cardholder: e.target.value })}
+                            placeholder="Ej: David, Esposa"
+                        />
                     </div>
                 </div>
 

@@ -51,6 +51,7 @@ export interface Transaction {
     isSystemGenerated?: boolean; // For Maaser/Jomesh/Fixed
     isMaaserable?: boolean; // For Income: Does it count for Maaser?
     isDeductible?: boolean; // For Expense: Is it deductible from Maaserable income?
+    cardholder?: string; // Name of the cardholder (e.g. 'David', 'Wife')
 }
 
 export interface ImportPattern {

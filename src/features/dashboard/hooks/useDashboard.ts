@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/features/auth/AuthProvider';
 
-export function useDashboard(date: Date = new Date(), accountId?: string) {
+export function useDashboard(date: Date = new Date(), accountId?: string, cardholder?: string) {
     const [data, setData] = useState({
         income: 0,
         expense: 0,
@@ -31,6 +31,10 @@ export function useDashboard(date: Date = new Date(), accountId?: string) {
 
             if (accountId && accountId !== 'all') {
                 query = query.eq('account_id', accountId);
+            }
+
+            if (cardholder && cardholder !== 'all') {
+                query = query.ilike('cardholder', cardholder);
             }
 
             const { data: transactions, error } = await query;
@@ -102,7 +106,7 @@ export function useDashboard(date: Date = new Date(), accountId?: string) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [date, user, accountId]);
+    }, [date, user, accountId, cardholder]);
 
     return data;
 }

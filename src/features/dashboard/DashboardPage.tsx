@@ -115,6 +115,7 @@ export function DashboardPage() {
                 currentDate={currentDate}
                 onMonthClick={setCurrentDate}
                 accountId={selectedAccountId}
+                cardholder={cardholderFilter}
             />
 
             {/* Recent Transactions Placeholder or other content could go here */}

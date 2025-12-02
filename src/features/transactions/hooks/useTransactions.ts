@@ -37,7 +37,8 @@ export function useTransactions() {
                 relatedTransactionId: t.related_transaction_id,
                 isSystemGenerated: t.is_system_generated,
                 isMaaserable: t.is_maaserable,
-                isDeductible: t.is_deductible
+                isDeductible: t.is_deductible,
+                cardholder: t.cardholder
             }));
             setTransactions(mappedTransactions);
 
@@ -218,7 +219,8 @@ export function useTransactions() {
             relatedTransactionId: t.related_transaction_id,
             isSystemGenerated: t.is_system_generated,
             isMaaserable: t.is_maaserable,
-            isDeductible: t.is_deductible
+            isDeductible: t.is_deductible,
+            cardholder: t.cardholder
         }));
 
         setTransactions(prev => [...newMappedTxs, ...(prev || [])].sort((a, b) => b.date.getTime() - a.date.getTime()));
@@ -319,6 +321,7 @@ export function useTransactions() {
         if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId || null;
         if (updates.isMaaserable !== undefined) dbUpdates.is_maaserable = updates.isMaaserable;
         if (updates.isDeductible !== undefined) dbUpdates.is_deductible = updates.isDeductible;
+        if (updates.cardholder !== undefined) dbUpdates.cardholder = updates.cardholder;
 
         await supabase.from('transactions').update(dbUpdates).eq('id', id);
 
