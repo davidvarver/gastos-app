@@ -1,0 +1,5 @@
+﻿
+> gastos-app@0.0.0 build
+> tsc -b && vite build
+
+src/features/dashboard/DashboardPage.tsx(118,29): error TS2304: Cannot find name 'cardholderFilter'.

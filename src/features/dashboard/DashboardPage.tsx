@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 export function DashboardPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
+    const [filterCardholder, setFilterCardholder] = useState<string>('');
     const { accounts } = useAccounts();
     const { income, expense, net, maaser, isLoading } = useDashboard(currentDate, selectedAccountId);
 
@@ -43,6 +44,17 @@ export function DashboardPage() {
                             ))}
                         </select>
                         <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Cardholder Filter */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Tarjetahabiente..."
+                            value={filterCardholder}
+                            onChange={(e) => setFilterCardholder(e.target.value)}
+                            className="bg-[#151e32] border border-[#1e293b] text-white text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#4ade80] outline-none hover:bg-[#1e293b] transition-colors w-[150px]"
+                        />
                     </div>
 
                     {/* Month Navigator */}
@@ -115,7 +127,7 @@ export function DashboardPage() {
                 currentDate={currentDate}
                 onMonthClick={setCurrentDate}
                 accountId={selectedAccountId}
-                cardholder={cardholderFilter}
+                cardholder={filterCardholder}
             />
 
             {/* Recent Transactions Placeholder or other content could go here */}
