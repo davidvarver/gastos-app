@@ -350,17 +350,6 @@ export function ImportPage() {
                                 </select>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tarjetahabiente por Defecto</label>
-                                <input
-                                    type="text"
-                                    className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] focus:border-transparent outline-none transition-all"
-                                    value={globalCardholder}
-                                    onChange={(e) => handleGlobalCardholderChange(e.target.value)}
-                                    placeholder="Ej: David"
-                                />
-                            </div>
-
                             <label className={cn(
                                 "flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer",
                                 isAmex ? "bg-[#4ade80]/10 border-[#4ade80]/50" : "bg-slate-800/30 border-slate-700 hover:bg-slate-800/50"

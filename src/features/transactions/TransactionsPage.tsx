@@ -37,7 +37,8 @@ export function TransactionsPage() {
         type: 'all',
         accountId: 'all',
         categoryId: 'all',
-        maaser: 'all' // 'all', 'maaserable', 'deductible'
+        maaser: 'all', // 'all', 'maaserable', 'deductible'
+        cardholder: ''
     });
 
     // Filter Logic
@@ -78,6 +79,12 @@ export function TransactionsPage() {
                 if (tx.type !== 'expense' || tx.isDeductible !== true) return false;
             }
         }
+
+        // Cardholder Filter
+        if (filters.cardholder) {
+            if (!tx.cardholder?.toLowerCase().includes(filters.cardholder.toLowerCase())) return false;
+        }
+
 
         // Date Filter
         if (filters.startDate) {
@@ -297,7 +304,7 @@ export function TransactionsPage() {
                         </div>
                         <div className="space-y-1 md:col-span-5 flex justify-end">
                             <button
-                                onClick={() => setFilters({ startDate: '', endDate: '', type: 'all', accountId: 'all', categoryId: 'all', maaser: 'all' })}
+                                onClick={() => setFilters({ startDate: '', endDate: '', type: 'all', accountId: 'all', categoryId: 'all', maaser: 'all', cardholder: '' })}
                                 className="text-xs text-slate-400 hover:text-white underline"
                             >
                                 Limpiar Filtros
