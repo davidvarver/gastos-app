@@ -314,11 +314,15 @@ export function useTransactions() {
 
         // 3. Update Main
         const dbUpdates: any = {};
-        if (updates.amount) dbUpdates.amount = updates.amount;
-        if (updates.description) dbUpdates.description = updates.description;
-        if (updates.date) dbUpdates.date = updates.date.toISOString();
+        if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.date !== undefined) dbUpdates.date = updates.date.toISOString();
         if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
         if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId || null;
+        if (updates.accountId !== undefined) dbUpdates.account_id = updates.accountId;
+        if (updates.toAccountId !== undefined) dbUpdates.to_account_id = updates.toAccountId;
+        if (updates.status !== undefined) dbUpdates.status = updates.status;
+        if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
         if (updates.isMaaserable !== undefined) dbUpdates.is_maaserable = updates.isMaaserable;
         if (updates.isDeductible !== undefined) dbUpdates.is_deductible = updates.isDeductible;
         if (updates.cardholder !== undefined) dbUpdates.cardholder = updates.cardholder;
