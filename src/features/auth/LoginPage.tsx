@@ -17,15 +17,15 @@ export function LoginPage() {
         try {
             if (isSignUp) {
                 const { error } = await supabase.auth.signUp({
-                    email,
-                    password,
+                    email: email.trim(),
+                    password: password.trim(),
                 });
                 if (error) throw error;
                 setMessage({ type: 'success', text: '¡Registro exitoso! Revisa tu correo para confirmar.' });
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
+                    email: email.trim(),
+                    password: password.trim(),
                 });
                 if (error) throw error;
             }
