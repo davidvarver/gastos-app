@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthProvider';
 
 export function LoginPage() {
     const [loading, setLoading] = useState(false);
@@ -8,6 +10,15 @@ export function LoginPage() {
     const [password, setPassword] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
 
     const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,6 +39,7 @@ export function LoginPage() {
                     password: password.trim(),
                 });
                 if (error) throw error;
+                navigate('/');
             }
         } catch (error: any) {
             console.error("Login Error Details:", error);
