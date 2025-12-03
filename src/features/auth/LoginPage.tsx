@@ -30,6 +30,7 @@ export function LoginPage() {
                 if (error) throw error;
             }
         } catch (error: any) {
+            console.error("Login Error Details:", error);
             setMessage({ type: 'error', text: error.message || 'Ocurrió un error.' });
         } finally {
             setLoading(false);
