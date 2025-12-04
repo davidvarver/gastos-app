@@ -3,7 +3,7 @@ import { RawTransaction } from './parsers';
 
 // Configure worker
 // @ts-ignore
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 interface TextItem {
     str: string;
