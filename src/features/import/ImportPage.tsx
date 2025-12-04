@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, CheckSquare, Square, Sparkles } from 'lucide-react';
 import { parseCSV, type RawTransaction } from './utils/parsers';
+import { parsePDF } from './utils/pdfParser';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,10 @@ export function ImportPage() {
                     const result = await parseCSV(f);
                     parsedTransactions = result.transactions;
                     setDetectedHeaders(result.headers || []);
+                } else if (f.name.toLowerCase().endsWith('.pdf')) {
+                    const result = await parsePDF(f);
+                    parsedTransactions = result.transactions;
+                    setDetectedHeaders(['PDF Import - Headers not available']);
                 }
 
                 if (parsedTransactions.length === 0) {
@@ -291,7 +296,7 @@ export function ImportPage() {
                     )}>
                         <input
                             type="file"
-                            accept=".csv"
+                            accept=".csv,.pdf"
                             onChange={handleFileChange}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             id="file-upload"
@@ -305,7 +310,7 @@ export function ImportPage() {
                             </div>
                             <div>
                                 <span className="font-bold text-slate-200 block text-lg">
-                                    {file ? "Archivo Seleccionado" : "Subir CSV"}
+                                    {file ? "Archivo Seleccionado" : "Subir CSV o PDF"}
                                 </span>
                                 <span className="text-sm text-slate-500 mt-1 block max-w-[200px] truncate mx-auto">
                                     {file ? file.name : "Arrastra o haz click aquí"}
