@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const SHARED_KEY = ""; // 👈 PASTE YOUR API KEY HERE
+const SHARED_KEY = "AIzaSyBCsHTTncO85Pa3MoB27YhdIRonGllZ85w"; // 👈 PASTE YOUR API KEY HERE
 
 export interface AnalyzedReceipt {
     amount: number;
@@ -32,6 +32,7 @@ export async function analyzeReceipt(imageFile: File, apiKey?: string): Promise<
         reader.onerror = error => reject(error);
     });
 
+    // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
     const base64Image = base64Data.split(',')[1];
 
     const genAI = new GoogleGenerativeAI(finalKey);
