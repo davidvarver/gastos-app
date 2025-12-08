@@ -137,7 +137,17 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
             if (dateObj && amountMatch) {
                 try {
                     const amountStr = amountMatch[0].replace(/[$,\s]/g, '');
-                    const amount = parseFloat(amountStr);
+                    let amount = parseFloat(amountStr);
+
+                    // Check for CR (Credit/Income indicator)
+                    // It can be at the end of the line OR on the next line
+                    const hasCR = /\sCR$/i.test(line.trim()) || (j + 1 < rows.length && rows[j + 1].text.trim().toUpperCase() === 'CR');
+
+                    if (hasCR) {
+                        amount = Math.abs(amount); // Income -> Positive
+                    } else {
+                        amount = -Math.abs(amount); // Expense -> Negative
+                    }
 
                     if (!isNaN(amount)) {
                         const formattedDate = dateObj.toISOString().split('T')[0];
@@ -152,6 +162,9 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
                             // Remove "DD de" prefix if it was a split match
                             description = description.replace(/^(\d{1,2})\s+de\s+/i, '');
                         }
+
+                        // Remove CR from description if present
+                        description = description.replace(/\sCR$/i, '');
 
                         description = description.trim().replace(/\s+/g, ' ');
 
