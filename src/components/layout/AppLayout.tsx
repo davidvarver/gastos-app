@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Settings, Wallet, PiggyBank } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Wallet, PiggyBank } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,7 +11,6 @@ const navItems = [
     { href: '/accounts', label: 'Bolsas', icon: Wallet },
     { href: '/savings', label: 'Metas', icon: PiggyBank },
     { href: '/import', label: 'Importar', icon: Upload },
-    { href: '/settings', label: 'Ajustes', icon: Settings },
 ];
 
 export function AppLayout() {
