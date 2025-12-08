@@ -91,6 +91,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         // Parse rows
         rows.forEach(row => {
             const line = row.text;
+            console.log("PDF Row:", line); // Debug log
 
             // Regex for Spanish Date: "27 de Agosto", "11 de Septiembre"
             // Also supports "27 Ago"
