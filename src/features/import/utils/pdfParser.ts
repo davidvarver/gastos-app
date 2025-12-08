@@ -93,8 +93,9 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         }
 
         // Parse rows
-        rows.forEach(row => {
-            const line = row.text;
+        for (let j = 0; j < rows.length; j++) {
+            const row = rows[j];
+            let line = row.text;
             console.log("PDF Row:", line); // Debug log
 
             // Regex for Spanish Date: "27 de Agosto", "11 de Septiembre"
@@ -104,42 +105,70 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
             // Regex for Amount: Number with commas and decimals, maybe negative sign
             const amountRegex = /(-?\$?\s?[\d,]+\.\d{2})/;
 
-            const dateMatch = line.match(dateRegex);
+            let dateMatch = line.match(dateRegex);
             const amountMatch = line.match(amountRegex);
+            let dateObj: Date | null = null;
 
-            if (dateMatch && amountMatch) {
+            // Strategy 1: Standard single-line match
+            if (dateMatch) {
+                dateObj = parseSpanishDate(dateMatch[0]);
+            }
+
+            // Strategy 2: Split date (Day on this line, Month on next line)
+            // Look for "DD de" at the start, but invalid month in this line
+            if (!dateObj && j + 1 < rows.length) {
+                const startMatch = line.match(/^(\d{1,2})\s+de\s+/i);
+                if (startMatch) {
+                    const nextLine = rows[j + 1].text.trim().toLowerCase();
+                    // Check if next line starts with a month
+                    const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+                    const foundMonth = months.find(m => nextLine.startsWith(m));
+
+                    if (foundMonth) {
+                        // Construct a fake date string to parse
+                        const day = startMatch[1];
+                        const constructedDateStr = `${day} de ${foundMonth}`;
+                        dateObj = parseSpanishDate(constructedDateStr);
+                        console.log(`Merged split date: ${line} + ${foundMonth} -> ${constructedDateStr}`);
+                    }
+                }
+            }
+
+            if (dateObj && amountMatch) {
                 try {
-                    const dateStr = dateMatch[0];
                     const amountStr = amountMatch[0].replace(/[$,\s]/g, '');
                     const amount = parseFloat(amountStr);
 
                     if (!isNaN(amount)) {
-                        const dateObj = parseSpanishDate(dateStr);
-                        if (dateObj) {
-                            const formattedDate = dateObj.toISOString().split('T')[0];
+                        const formattedDate = dateObj.toISOString().split('T')[0];
 
-                            let description = line
-                                .replace(dateStr, '')
-                                .replace(amountMatch[0], '')
-                                .trim();
+                        // Remove the date part from the description
+                        // If it was a split date, we remove "DD de"
+                        let description = line.replace(amountMatch[0], '').trim();
 
-                            description = description.replace(/\s+/g, ' ');
+                        if (dateMatch) {
+                            description = description.replace(dateMatch[0], '');
+                        } else {
+                            // Remove "DD de" prefix if it was a split match
+                            description = description.replace(/^(\d{1,2})\s+de\s+/i, '');
+                        }
 
-                            if (description.length > 3 && !description.toLowerCase().includes('saldo anterior')) {
-                                transactions.push({
-                                    date: formattedDate,
-                                    description: description,
-                                    amount: amount,
-                                    originalLine: line
-                                });
-                            }
+                        description = description.trim().replace(/\s+/g, ' ');
+
+                        if (description.length > 3 && !description.toLowerCase().includes('saldo anterior')) {
+                            transactions.push({
+                                date: formattedDate,
+                                description: description,
+                                amount: amount,
+                                originalLine: line
+                            });
                         }
                     }
                 } catch (e) {
                     errors.push(`Error parsing line: ${line}`);
                 }
             }
-        });
+        }
     }
 
     return { transactions, errors };
