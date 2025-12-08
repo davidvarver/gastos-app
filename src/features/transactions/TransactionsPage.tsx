@@ -29,17 +29,12 @@ export function TransactionsPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const apiKey = localStorage.getItem('gemini_api_key');
-        if (!apiKey) {
-            toast.error("Configura tu API Key en Ajustes primero.");
-            return;
-        }
-
         setIsScanning(true);
         const toastId = toast.loading("Analizando ticket con IA...");
 
         try {
-            const data = await analyzeReceipt(file, apiKey);
+            // apiKey is optional now, it will look for SHARED_KEY if not provided
+            const data = await analyzeReceipt(file);
 
             // Find category ID based on suggestion
             let categoryId = '';

@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const SHARED_KEY = ""; // 👈 PASTE YOUR API KEY HERE
+
 export interface AnalyzedReceipt {
     amount: number;
     date: string;
@@ -7,7 +9,22 @@ export interface AnalyzedReceipt {
     category_suggestion: string;
 }
 
-export async function analyzeReceipt(imageFile: File, apiKey: string): Promise<AnalyzedReceipt> {
+export function getApiKey(): string | null {
+    // 1. Settings (User Override)
+    const local = localStorage.getItem('gemini_api_key');
+    if (local) return local;
+
+    // 2. Hardcoded (Shared)
+    if (SHARED_KEY) return SHARED_KEY;
+
+    // 3. Environment Variable (Vercel)
+    return import.meta.env.VITE_GEMINI_API_KEY || null;
+}
+
+export async function analyzeReceipt(imageFile: File, apiKey?: string): Promise<AnalyzedReceipt> {
+    const finalKey = apiKey || getApiKey();
+    if (!finalKey) throw new Error("Falta API Key");
+
     const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(imageFile);
@@ -15,10 +32,9 @@ export async function analyzeReceipt(imageFile: File, apiKey: string): Promise<A
         reader.onerror = error => reject(error);
     });
 
-    // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
     const base64Image = base64Data.split(',')[1];
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(finalKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
