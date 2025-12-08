@@ -1,13 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCategories } from './hooks/useCategories';
 import { Plus, Trash2, Edit2, Tag, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CategoryFormModal } from './components/CategoryFormModal';
 
 export function CategoriesPage() {
-    const { categories, addCategory, updateCategory, deleteCategory, addSubcategory, deleteSubcategory, isLoading } = useCategories();
+    const { categories, addCategory, updateCategory, deleteCategory, addSubcategory, deleteSubcategory, seedDefaultCategories, isLoading } = useCategories();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any>(null);
+
+    // Auto-seed defaults if empty and not yet seeded
+    useEffect(() => {
+        const checkAndSeed = async () => {
+            if (!categories) return;
+
+            const hasSeeded = localStorage.getItem('gastos_categories_seeded');
+
+            if (categories.length === 0 && !hasSeeded) {
+                try {
+                    await seedDefaultCategories();
+                    localStorage.setItem('gastos_categories_seeded', 'true');
+                } catch (error) {
+                    console.error("Auto-seeding categories failed:", error);
+                }
+            }
+        };
+
+        checkAndSeed();
+    }, [categories]);
 
     // Form State
     const [name, setName] = useState('');

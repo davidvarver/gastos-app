@@ -223,6 +223,34 @@ export function useCategories() {
         }
     };
 
+    const seedDefaultCategories = async () => {
+        if (!user) return;
+
+        const defaults = [
+            { name: "Colegiaturas", color: "#3b82f6", icon: "school" },
+            { name: "Servicios", color: "#f59e0b", icon: "zap" },
+            { name: "Seguro Gastos Médicos", color: "#ef4444", icon: "heart-pulse" },
+            { name: "Seguro Automotriz", color: "#ef4444", icon: "car" },
+            { name: "Mantenimiento", color: "#64748b", icon: "tool" },
+            { name: "Viajes", color: "#8b5cf6", icon: "plane" },
+            { name: "Personal de Servicio", color: "#10b981", icon: "user" }
+        ];
+
+        const newItems = defaults.map(cat => ({
+            user_id: user.id,
+            name: cat.name,
+            type: 'expense',
+            color: cat.color,
+            icon: cat.icon,
+            is_system: false
+        }));
+
+        const { error } = await supabase.from('categories').insert(newItems);
+        if (error) throw error;
+
+        fetchCategories();
+    };
+
     return {
         categories,
         addCategory,
@@ -230,6 +258,7 @@ export function useCategories() {
         deleteCategory,
         addSubcategory,
         deleteSubcategory,
+        seedDefaultCategories,
         isLoading: loading,
     };
 }
