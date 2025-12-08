@@ -11,7 +11,7 @@ const navItems = [
     { href: '/accounts', label: 'Bolsas', icon: Wallet },
     { href: '/savings', label: 'Metas', icon: PiggyBank },
     { href: '/import', label: 'Importar', icon: Upload },
-    // { href: '/settings', label: 'Ajustes', icon: Settings }, // Settings not implemented yet
+    { href: '/settings', label: 'Ajustes', icon: Settings },
 ];
 
 export function AppLayout() {

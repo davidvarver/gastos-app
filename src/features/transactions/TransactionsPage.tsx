@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square, Save, X } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square, Save, X, Camera, Loader2 } from 'lucide-react';
+import { analyzeReceipt } from '@/lib/gemini';
+import { toast } from 'sonner';
 import { useTransactions } from './hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useCategories } from '@/features/categories/hooks/useCategories';
@@ -16,6 +18,57 @@ export function TransactionsPage() {
     const { accounts, addAccount, isLoading: accountsLoading } = useAccounts();
     const { addCategory } = useCategories();
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isScanning, setIsScanning] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleScanClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const apiKey = localStorage.getItem('gemini_api_key');
+        if (!apiKey) {
+            toast.error("Configura tu API Key en Ajustes primero.");
+            return;
+        }
+
+        setIsScanning(true);
+        const toastId = toast.loading("Analizando ticket con IA...");
+
+        try {
+            const data = await analyzeReceipt(file, apiKey);
+
+            // Find category ID based on suggestion
+            let categoryId = '';
+            if (data.category_suggestion) {
+                const match = categories?.find(c =>
+                    c.name.toLowerCase().includes(data.category_suggestion.toLowerCase()) ||
+                    data.category_suggestion.toLowerCase().includes(c.name.toLowerCase())
+                );
+                if (match) categoryId = match.id;
+            }
+
+            setEditingTx({
+                date: new Date(data.date),
+                amount: data.amount,
+                description: data.description,
+                type: 'expense', // Assume expense for tickets
+                categoryId: categoryId,
+                accountId: accounts?.[0]?.id // Default account
+            });
+            setIsModalOpen(true);
+            toast.success("¡Ticket analizado!", { id: toastId });
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al analizar el ticket", { id: toastId });
+        } finally {
+            setIsScanning(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
@@ -213,6 +266,26 @@ export function TransactionsPage() {
                     >
                         {isEditMode ? <CheckSquare className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
                         {isEditMode ? 'Terminar Edición' : 'Editar'}
+                    </button>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileChange}
+                    />
+                    <button
+                        onClick={handleScanClick}
+                        disabled={isScanning}
+                        className={cn(
+                            "px-4 py-2 rounded-xl flex items-center gap-2 transition-colors border bg-purple-600 hover:bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-600/20",
+                            isScanning && "opacity-50 cursor-wait"
+                        )}
+                    >
+                        {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                        {isScanning ? 'Analizando...' : 'Escanear'}
                     </button>
 
                     <button

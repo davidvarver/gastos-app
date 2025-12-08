@@ -7,6 +7,7 @@ import { CategoriesPage } from './features/categories/CategoriesPage';
 import { RecurringPage } from './features/transactions/RecurringPage';
 import { ImportPage } from './features/import/ImportPage';
 import { SavingsPage } from './features/savings/SavingsPage';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { LoginPage } from './features/auth/LoginPage';
 // import { RegisterPage } from './features/auth/RegisterPage'; // Not implemented yet?
 import { AuthProvider } from './features/auth/AuthProvider';
@@ -30,6 +31,7 @@ function App() {
             <Route path="/recurring" element={<RecurringPage />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/savings" element={<SavingsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
