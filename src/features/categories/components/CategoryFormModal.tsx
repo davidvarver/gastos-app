@@ -3,6 +3,9 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Category } from '@/db/db';
 
+import { IconPicker } from '@/components/ui/IconPicker';
+import { getIcon } from '@/lib/icons';
+
 interface CategoryFormModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -14,6 +17,7 @@ export function CategoryFormModal({ isOpen, onClose, onSave, initialData }: Cate
     const [name, setName] = useState('');
     const [type, setType] = useState<'income' | 'expense' | undefined>(undefined);
     const [color, setColor] = useState('#3b82f6');
+    const [icon, setIcon] = useState('tag');
 
     useEffect(() => {
         if (isOpen) {
@@ -21,17 +25,19 @@ export function CategoryFormModal({ isOpen, onClose, onSave, initialData }: Cate
                 setName(initialData.name);
                 setType(initialData.type);
                 setColor(initialData.color);
+                setIcon(initialData.icon || 'tag');
             } else {
                 setName('');
                 setType(undefined);
                 setColor('#3b82f6');
+                setIcon('tag');
             }
         }
     }, [isOpen, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSave({ name, type, color });
+        await onSave({ name, type, color, icon });
         onClose();
     };
 
@@ -105,6 +111,12 @@ export function CategoryFormModal({ isOpen, onClose, onSave, initialData }: Cate
                             onChange={e => setColor(e.target.value)}
                             className="w-full h-10 bg-[#0b1121] border border-slate-700 rounded-lg cursor-pointer"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-2">Icono</label>
+                        <div className="bg-[#0b1121] border border-slate-700 rounded-xl p-4">
+                            <IconPicker value={icon} onChange={setIcon} color={color} />
+                        </div>
                     </div>
                     <div className="flex gap-3 mt-6">
                         <button

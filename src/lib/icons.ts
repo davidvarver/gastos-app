@@ -1,0 +1,70 @@
+import {
+    Tag,
+    ShoppingBag,
+    Utensils,
+    Car,
+    Home,
+    Briefcase,
+    HeartPulse,
+    Plane,
+    GraduationCap,
+    Zap,
+    Wifi,
+    Smartphone,
+    Tv,
+    Music,
+    Dumbbell,
+    Gift,
+    Coffee,
+    ShoppingCart,
+    Wrench,
+    PiggyBank,
+    Wallet,
+    DollarSign,
+    CreditCard,
+    Landmark,
+    Baby,
+    Dog,
+    Cat,
+    Shirt,
+    Gamepad2,
+    Book
+} from 'lucide-react';
+
+export const CATEGORY_ICONS: Record<string, any> = {
+    'tag': Tag,
+    'shopping-bag': ShoppingBag,
+    'utensils': Utensils,
+    'car': Car,
+    'home': Home,
+    'briefcase': Briefcase,
+    'heart-pulse': HeartPulse,
+    'plane': Plane,
+    'school': GraduationCap, // Mapped 'school' to GraduationCap
+    'zap': Zap,
+    'wifi': Wifi,
+    'smartphone': Smartphone,
+    'tv': Tv,
+    'music': Music,
+    'dumbbell': Dumbbell,
+    'gift': Gift,
+    'coffee': Coffee,
+    'shopping-cart': ShoppingCart,
+    'tool': Wrench, // Mapped 'tool' to Wrench
+    'piggy-bank': PiggyBank,
+    'wallet': Wallet,
+    'dollar-sign': DollarSign,
+    'credit-card': CreditCard,
+    'landmark': Landmark,
+    'baby': Baby,
+    'dog': Dog,
+    'cat': Cat,
+    'shirt': Shirt,
+    'gamepad': Gamepad2,
+    'book': Book,
+    'user': Briefcase // Fallback or generic
+};
+
+export function getIcon(name: string) {
+    return CATEGORY_ICONS[name] || Tag;
+}

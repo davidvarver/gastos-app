@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from './hooks/useCategories';
-import { Plus, Trash2, Edit2, Tag, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { getIcon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import { CategoryFormModal } from './components/CategoryFormModal';
 
@@ -110,21 +111,17 @@ export function CategoriesPage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-black/20"
                                     style={{ backgroundColor: cat.color }}
                                 >
-                                    <Tag className="w-5 h-5" />
+                                    {(() => {
+                                        const Icon = getIcon(cat.icon || 'tag');
+                                        return <Icon className="w-6 h-6" />;
+                                    })()}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white">{cat.name}</h3>
-                                    {cat.type && (
-                                        <span className={cn(
-                                            "text-xs px-2 py-0.5 rounded-full",
-                                            cat.type === 'income' ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
-                                        )}>
-                                            {cat.type === 'income' ? 'Ingreso' : 'Gasto'}
-                                        </span>
-                                    )}
+                                    <h3 className="font-bold text-white text-lg">{cat.name}</h3>
+                                    {/* Type label removed as requested */}
                                 </div>
                             </div>
 
@@ -202,7 +199,7 @@ export function CategoriesPage() {
                         if (editingCategory) {
                             await updateCategory(editingCategory.id, data);
                         } else {
-                            await addCategory({ ...data, icon: 'tag' } as any);
+                            await addCategory({ ...data, icon: data.icon || 'tag' } as any);
                         }
                     } catch (error) {
                         console.error(error);
