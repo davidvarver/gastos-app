@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function RecurringPage() {
-    const { recurring, addRecurring, updateRecurring, deleteRecurring, generateForMonth } = useRecurringTransactions();
+    const { recurring, addRecurring, updateRecurring, deleteRecurring, generateForMonth, seedDefaults } = useRecurringTransactions();
     const { accounts } = useAccounts();
     const { categories } = useTransactions();
 
@@ -26,6 +26,24 @@ export function RecurringPage() {
     });
 
     const [generating, setGenerating] = useState(false);
+
+    const handleSeedDefaults = async () => {
+        if (!accounts || accounts.length === 0) {
+            alert('Necesitas crear al menos una cuenta antes de cargar los gastos por defecto.');
+            return;
+        }
+
+        if (confirm('¿Cargar lista de gastos fijos sugeridos (Mantenimiento, Luz, Agua, etc.)?')) {
+            try {
+                // Use the first account by default, or maybe the one marked as default if we had that concept.
+                // For now, first account is fine.
+                await seedDefaults(accounts[0].id);
+            } catch (error) {
+                console.error(error);
+                alert('Error al cargar defaults');
+            }
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,6 +124,15 @@ export function RecurringPage() {
                     <p className="text-slate-400">Gestiona tus gastos e ingresos recurrentes (Renta, Sueldos, etc.)</p>
                 </div>
                 <div className="flex gap-3">
+                    {recurring && recurring.length === 0 && (
+                        <button
+                            onClick={handleSeedDefaults}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Cargar Sugeridos
+                        </button>
+                    )}
                     <button
                         onClick={handleGenerate}
                         disabled={generating}

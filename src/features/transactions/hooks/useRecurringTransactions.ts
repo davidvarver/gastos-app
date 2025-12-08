@@ -169,12 +169,38 @@ export function useRecurringTransactions() {
         await addTransactions(transactionsToCreate);
     };
 
+    const seedDefaults = async (accountId: string) => {
+        if (!user) return;
+
+        const defaults = [
+            "MANTENIMIENTO", "COLEGIATURAS", "SEGUROS", "GASOLINA", "AGUA", "LUZ", "GAS",
+            "MUCHACHA", "COMIDA", "SUPER", "CLASES PARTICULARES Y GYM", "MEDICINAS",
+            "ARREGLOS CASA", "ROPA", "VIAJES", "EXTRAS", "SALIDAS", "DOCTORES"
+        ];
+
+        const newItems = defaults.map(desc => ({
+            user_id: user.id,
+            description: desc,
+            amount: 0,
+            type: 'expense',
+            account_id: accountId,
+            day_of_month: 1,
+            active: true
+        }));
+
+        const { error } = await supabase.from('recurring_transactions').insert(newItems);
+        if (error) throw error;
+
+        fetchRecurring();
+    };
+
     return {
         recurring,
         addRecurring,
         updateRecurring,
         deleteRecurring,
         generateForMonth,
+        seedDefaults,
         isLoading: loading
     };
 }
