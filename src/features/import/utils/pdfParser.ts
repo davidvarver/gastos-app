@@ -141,9 +141,21 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
 
                     // Check for CR (Credit/Income indicator)
                     // It can be at the end of the line OR on the next line
-                    const hasCR = /\sCR$/i.test(line.trim()) || (j + 1 < rows.length && rows[j + 1].text.trim().toUpperCase() === 'CR');
+                    // We use word boundaries \b to avoid matching "MICROSOFT" or "SCREAM"
+                    const nextLine = j + 1 < rows.length ? rows[j + 1].text.trim() : "";
+
+                    // Debug log
+                    // console.log(`Checking line: "${line}"`);
+                    // console.log(`Next line: "${nextLine}"`);
+
+                    const hasCRInLine = /\bCR\b/i.test(line);
+                    // Check next line: must contain CR and be short (to avoid matching descriptions)
+                    const hasCRInNext = nextLine.length < 20 && /\bCR\b/i.test(nextLine);
+
+                    const hasCR = hasCRInLine || hasCRInNext;
 
                     if (hasCR) {
+                        console.log(`Found CR for ${amount} (Income)`);
                         amount = Math.abs(amount); // Income -> Positive
                     } else {
                         amount = -Math.abs(amount); // Expense -> Negative
