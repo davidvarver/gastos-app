@@ -12,6 +12,43 @@ interface TextItem {
     height: number;
 }
 
+// Helper function to parse Spanish dates
+function parseSpanishDate(dateStr: string): Date | null {
+    const monthMap: { [key: string]: number } = {
+        'enero': 0, 'ene': 0,
+        'febrero': 1, 'feb': 1,
+        'marzo': 2, 'mar': 2,
+        'abril': 3, 'abr': 3,
+        'mayo': 4, 'may': 4,
+        'junio': 5, 'jun': 5,
+        'julio': 6, 'jul': 6,
+        'agosto': 7, 'ago': 7,
+        'septiembre': 8, 'sep': 8,
+        'octubre': 9, 'oct': 9,
+        'noviembre': 10, 'nov': 10,
+        'diciembre': 11, 'dic': 11,
+    };
+
+    const parts = dateStr.toLowerCase().replace(' de ', ' ').split(' ');
+    if (parts.length < 2) return null;
+
+    const day = parseInt(parts[0], 10);
+    const monthName = parts[1];
+    const month = monthMap[monthName];
+
+    if (isNaN(day) || month === undefined) return null;
+
+    // Assume current year for now
+    const currentYear = new Date().getFullYear();
+    const date = new Date(currentYear, month, day);
+
+    if (date.getDate() !== day || date.getMonth() !== month) {
+        return null;
+    }
+
+    return date;
+}
+
 export async function parsePDF(file: File): Promise<{ transactions: RawTransaction[], errors: string[] }> {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -22,18 +59,15 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
 
-        // Group text items by Y coordinate (row)
-        // PDF coordinates start from bottom-left, so higher Y is higher up the page.
-        // We'll group items that are roughly on the same Y line.
         const items = textContent.items as TextItem[];
         const rows: { y: number, text: string }[] = [];
 
         // Sort items by Y (descending) then X (ascending)
         items.sort((a, b) => {
-            if (Math.abs(a.transform[5] - b.transform[5]) > 5) { // Tolerance of 5 units for Y
-                return b.transform[5] - a.transform[5]; // Top to bottom
+            if (Math.abs(a.transform[5] - b.transform[5]) > 5) {
+                return b.transform[5] - a.transform[5];
             }
-            return a.transform[4] - b.transform[4]; // Left to right
+            return a.transform[4] - b.transform[4];
         });
 
         let currentRowY = -1;
@@ -41,15 +75,12 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
 
         items.forEach(item => {
             if (currentRowY === -1 || Math.abs(item.transform[5] - currentRowY) > 5) {
-                // New row
                 if (currentRowText) {
                     rows.push({ y: currentRowY, text: currentRowText.trim() });
                 }
                 currentRowY = item.transform[5];
                 currentRowText = item.str;
             } else {
-                // Same row, append text
-                // Add space if needed based on X distance? For now just space.
                 currentRowText += " " + item.str;
             }
         });
@@ -60,11 +91,11 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         // Parse rows
         rows.forEach(row => {
             const line = row.text;
-            // Heuristic to detect transaction lines
-            // Look for Date (DD/MM/YYYY or similar) + Amount
 
-            // Regex for Date: DD/MM/YYYY or DD-MMM-YYYY or DD MMM
-            const dateRegex = /(\d{1,2}[\/\-\s](?:[A-Za-z]{3}|\d{1,2})[\/\-\s]?\d{2,4}?)/;
+            // Regex for Spanish Date: "27 de Agosto", "11 de Septiembre"
+            // Also supports "27 Ago"
+            const dateRegex = /(\d{1,2}\s+de\s+[A-Za-z]+|\d{1,2}\s+[A-Za-z]{3})/;
+
             // Regex for Amount: Number with commas and decimals, maybe negative sign
             const amountRegex = /(-?\$?\s?[\d,]+\.\d{2})/;
 
@@ -78,24 +109,25 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
                     const amount = parseFloat(amountStr);
 
                     if (!isNaN(amount)) {
-                        // Description is usually the text between date and amount, or around them.
-                        // Let's assume description is the longest text part remaining after removing date and amount.
-                        let description = line
-                            .replace(dateStr, '')
-                            .replace(amountMatch[0], '')
-                            .trim();
+                        const dateObj = parseSpanishDate(dateStr);
+                        if (dateObj) {
+                            const formattedDate = dateObj.toISOString().split('T')[0];
 
-                        // Clean up extra spaces
-                        description = description.replace(/\s+/g, ' ');
+                            let description = line
+                                .replace(dateStr, '')
+                                .replace(amountMatch[0], '')
+                                .trim();
 
-                        // Filter out common noise
-                        if (description.length > 3) {
-                            transactions.push({
-                                date: dateStr,
-                                description: description,
-                                amount: amount,
-                                originalLine: line
-                            });
+                            description = description.replace(/\s+/g, ' ');
+
+                            if (description.length > 3 && !description.toLowerCase().includes('saldo anterior')) {
+                                transactions.push({
+                                    date: formattedDate,
+                                    description: description,
+                                    amount: amount,
+                                    originalLine: line
+                                });
+                            }
                         }
                     }
                 } catch (e) {
