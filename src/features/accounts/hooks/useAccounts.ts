@@ -122,11 +122,34 @@ export function useAccounts() {
     };
 
     const deleteAccount = async (id: string) => {
-        const { error } = await supabase.from('accounts').delete().eq('id', id);
-        if (error) throw error;
-
         // Optimistic Update
         setAccounts(prev => prev?.filter(a => a.id !== id));
+
+        // 1. Delete associated transactions (Incoming, Outgoing, Transfers)
+        // We need to be careful with transfers. If we delete a transfer, it disappears from both accounts?
+        // Yes, a transaction row belongs to an account.
+        // But what about `to_account_id`?
+        // If we delete an account, any transfer TO it should probably also be deleted or have `to_account_id` set to null?
+        // Usually, if you delete a bank account, you delete the history.
+        // Let's delete all transactions where this account is either source or destination.
+
+        const { error: txError } = await supabase
+            .from('transactions')
+            .delete()
+            .or(`account_id.eq.${id},to_account_id.eq.${id}`);
+
+        if (txError) {
+            fetchAccounts(); // Rollback
+            throw txError;
+        }
+
+        // 2. Delete the account
+        const { error } = await supabase.from('accounts').delete().eq('id', id);
+
+        if (error) {
+            fetchAccounts(); // Rollback
+            throw error;
+        }
     };
 
     return {

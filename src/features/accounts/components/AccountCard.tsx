@@ -18,13 +18,19 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                     <button
-                        onClick={() => onEdit(account)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(account);
+                        }}
                         className="p-2 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => onDelete(account.id)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(account.id);
+                        }}
                         className="p-2 hover:bg-destructive/10 rounded-full text-muted-foreground hover:text-destructive"
                     >
                         <Trash className="w-4 h-4" />

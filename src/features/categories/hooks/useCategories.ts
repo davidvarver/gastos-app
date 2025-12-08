@@ -125,25 +125,22 @@ export function useCategories() {
     };
 
     const deleteCategory = async (id: string) => {
-        // Check usage first (Client-side check if possible, or trust server error)
-        // We can check local transactions state if available, but here we only have categories.
-        // Let's keep the server check but maybe do optimistic delete if we are confident?
-        // Usage check is async, so we can't be fully optimistic without risk.
-        // But we can do the check, THEN optimistic delete, THEN server delete.
-
-        const { count, error: countError } = await supabase
-            .from('transactions')
-            .select('*', { count: 'exact', head: true })
-            .eq('category_id', id);
-
-        if (countError) throw countError;
-        if (count && count > 0) {
-            throw new Error(`No se puede eliminar: Esta categoría se usa en ${count} transacciones.`);
-        }
-
         // Optimistic Delete
         setCategories(prev => prev?.filter(c => c.id !== id));
 
+        // 1. Unlink transactions (set category_id to null)
+        const { error: updateError } = await supabase
+            .from('transactions')
+            .update({ category_id: null })
+            .eq('category_id', id);
+
+        if (updateError) {
+            // Rollback
+            fetchCategories();
+            throw updateError;
+        }
+
+        // 2. Delete the category
         const { error } = await supabase.from('categories').delete().eq('id', id);
 
         if (error) {
