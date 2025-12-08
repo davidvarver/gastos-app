@@ -29,7 +29,11 @@ function parseSpanishDate(dateStr: string): Date | null {
         'diciembre': 11, 'dic': 11,
     };
 
-    const parts = dateStr.toLowerCase().replace(' de ', ' ').split(' ');
+    // Robust splitting: handle " de ", " DE ", multiple spaces, etc.
+    // First remove "de" if present
+    const cleanStr = dateStr.toLowerCase().replace(/\s+de\s+/, ' ').trim();
+    const parts = cleanStr.split(/\s+/);
+
     if (parts.length < 2) return null;
 
     const day = parseInt(parts[0], 10);
@@ -64,7 +68,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
 
         // Sort items by Y (descending) then X (ascending)
         items.sort((a, b) => {
-            if (Math.abs(a.transform[5] - b.transform[5]) > 5) {
+            if (Math.abs(a.transform[5] - b.transform[5]) > 10) { // Increased tolerance to 10
                 return b.transform[5] - a.transform[5];
             }
             return a.transform[4] - b.transform[4];
@@ -74,7 +78,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         let currentRowText = "";
 
         items.forEach(item => {
-            if (currentRowY === -1 || Math.abs(item.transform[5] - currentRowY) > 5) {
+            if (currentRowY === -1 || Math.abs(item.transform[5] - currentRowY) > 10) { // Increased tolerance to 10
                 if (currentRowText) {
                     rows.push({ y: currentRowY, text: currentRowText.trim() });
                 }
