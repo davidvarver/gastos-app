@@ -139,20 +139,34 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
                     const amountStr = amountMatch[0].replace(/[$,\s]/g, '');
                     let amount = parseFloat(amountStr);
 
+                    // Check next line for extra info (Description continuation or CR)
+                    let nextLineIndex = j + 1;
+                    let extraDescription = "";
+                    let foundCRInNext = false;
+
+                    if (nextLineIndex < rows.length) {
+                        const nextRowText = rows[nextLineIndex].text.trim();
+
+                        // Check if next line is a new transaction (has date)
+                        // If it has a date, it's NOT a continuation.
+                        const nextHasDate = /(\d{1,2}\s+de\s+[A-Za-z]+|\d{1,2}\s+[A-Za-z]{3})/.test(nextRowText);
+
+                        if (!nextHasDate) {
+                            // It's likely a continuation (RFC, or just extra text)
+                            // Check for CR in this next line
+                            if (/\bCR\b/i.test(nextRowText)) {
+                                foundCRInNext = true;
+                            }
+
+                            // Append to description (cleaning CR)
+                            extraDescription = " " + nextRowText.replace(/\bCR\b/i, '').trim();
+                        }
+                    }
+
                     // Check for CR (Credit/Income indicator)
-                    // It can be at the end of the line OR on the next line
-                    // We use word boundaries \b to avoid matching "MICROSOFT" or "SCREAM"
-                    const nextLine = j + 1 < rows.length ? rows[j + 1].text.trim() : "";
-
-                    // Debug log
-                    // console.log(`Checking line: "${line}"`);
-                    // console.log(`Next line: "${nextLine}"`);
-
-                    const hasCRInLine = /\bCR\b/i.test(line);
-                    // Check next line: must contain CR and be short (to avoid matching descriptions)
-                    const hasCRInNext = nextLine.length < 20 && /\bCR\b/i.test(nextLine);
-
-                    const hasCR = hasCRInLine || hasCRInNext;
+                    // 1. End of current line
+                    // 2. End of next line (if it was a continuation)
+                    const hasCR = /\bCR\b/i.test(line.trim()) || foundCRInNext;
 
                     if (hasCR) {
                         console.log(`Found CR for ${amount} (Income)`);
@@ -175,8 +189,11 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
                             description = description.replace(/^(\d{1,2})\s+de\s+/i, '');
                         }
 
-                        // Remove CR from description if present
-                        description = description.replace(/\sCR$/i, '');
+                        // Remove CR from main line if present
+                        description = description.replace(/\bCR\b/i, '');
+
+                        // Append extra description
+                        description += extraDescription;
 
                         description = description.trim().replace(/\s+/g, ' ');
 
