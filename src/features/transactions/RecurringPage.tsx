@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Calendar, Trash2, Edit2, Play, CheckCircle2, XCircle } from 'lucide-react';
 import { useRecurringTransactions } from './hooks/useRecurringTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
@@ -27,23 +27,26 @@ export function RecurringPage() {
 
     const [generating, setGenerating] = useState(false);
 
-    const handleSeedDefaults = async () => {
-        if (!accounts || accounts.length === 0) {
-            alert('Necesitas crear al menos una cuenta antes de cargar los gastos por defecto.');
-            return;
-        }
+    // Auto-seed defaults if empty and not yet seeded
+    useEffect(() => {
+        const checkAndSeed = async () => {
+            if (!recurring || !accounts) return;
 
-        if (confirm('¿Cargar lista de gastos fijos sugeridos (Mantenimiento, Luz, Agua, etc.)?')) {
-            try {
-                // Use the first account by default, or maybe the one marked as default if we had that concept.
-                // For now, first account is fine.
-                await seedDefaults(accounts[0].id);
-            } catch (error) {
-                console.error(error);
-                alert('Error al cargar defaults');
+            // Only seed if we have accounts, no recurring items, and haven't seeded before (on this device)
+            const hasSeeded = localStorage.getItem('gastos_defaults_seeded');
+
+            if (recurring.length === 0 && accounts.length > 0 && !hasSeeded) {
+                try {
+                    await seedDefaults(accounts[0].id);
+                    localStorage.setItem('gastos_defaults_seeded', 'true');
+                } catch (error) {
+                    console.error("Auto-seeding failed:", error);
+                }
             }
-        }
-    };
+        };
+
+        checkAndSeed();
+    }, [recurring, accounts]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -124,15 +127,6 @@ export function RecurringPage() {
                     <p className="text-slate-400">Gestiona tus gastos e ingresos recurrentes (Renta, Sueldos, etc.)</p>
                 </div>
                 <div className="flex gap-3">
-                    {recurring && recurring.length === 0 && (
-                        <button
-                            onClick={handleSeedDefaults}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Cargar Sugeridos
-                        </button>
-                    )}
                     <button
                         onClick={handleGenerate}
                         disabled={generating}
