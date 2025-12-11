@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { useAccounts } from './hooks/useAccounts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { format } from 'date-fns';
@@ -88,7 +88,7 @@ export function AccountsPage() {
 }
 
 function AccountDetailsModal({ account, onClose }: { account: Account; onClose: () => void }) {
-    const { transactions } = useTransactions();
+    const { transactions, isLoading } = useTransactions();
 
     // Filter transactions for this account (Source or Destination)
     const accountTransactions = transactions?.filter(tx =>
@@ -121,46 +121,59 @@ function AccountDetailsModal({ account, onClose }: { account: Account; onClose: 
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1e293b]">
-                            {accountTransactions.map(tx => {
-                                // Determine if it's income or expense relative to THIS account
-                                let isPositive = false;
-
-                                if (tx.type === 'income') {
-                                    isPositive = true;
-                                } else if (tx.type === 'expense') {
-                                    isPositive = false;
-                                } else if (tx.type === 'transfer') {
-                                    if (tx.toAccountId === account.id) {
-                                        isPositive = true; // Incoming transfer
-                                    } else {
-                                        isPositive = false; // Outgoing transfer
-                                    }
-                                }
-
-                                const colorClass = isPositive ? "text-[#4ade80]" : "text-red-400";
-                                const sign = isPositive ? "+" : "-";
-
-                                return (
-                                    <tr key={tx.id} className="hover:bg-slate-800/50 transition-colors">
-                                        <td className="px-6 py-4 text-slate-300">
-                                            {format(tx.date, 'dd MMM', { locale: es })}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-white">{tx.description}</div>
-                                            <div className="text-xs text-slate-500 capitalize">{tx.type === 'transfer' ? 'Transferencia' : tx.type === 'income' ? 'Ingreso' : 'Gasto'}</div>
-                                        </td>
-                                        <td className={cn("px-6 py-4 text-right font-bold font-mono", colorClass)}>
-                                            {sign}${tx.amount.toFixed(2)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {accountTransactions.length === 0 && (
+                            {isLoading ? (
                                 <tr>
                                     <td colSpan={3} className="px-6 py-12 text-center text-slate-500">
-                                        No hay movimientos en esta cuenta.
+                                        <div className="flex justify-center items-center gap-2">
+                                            <Loader2 className="w-5 h-5 animate-spin text-[#4ade80]" />
+                                            <span>Cargando movimientos...</span>
+                                        </div>
                                     </td>
                                 </tr>
+                            ) : (
+                                <>
+                                    {accountTransactions.map(tx => {
+                                        // Determine if it's income or expense relative to THIS account
+                                        let isPositive = false;
+
+                                        if (tx.type === 'income') {
+                                            isPositive = true;
+                                        } else if (tx.type === 'expense') {
+                                            isPositive = false;
+                                        } else if (tx.type === 'transfer') {
+                                            if (tx.toAccountId === account.id) {
+                                                isPositive = true; // Incoming transfer
+                                            } else {
+                                                isPositive = false; // Outgoing transfer
+                                            }
+                                        }
+
+                                        const colorClass = isPositive ? "text-[#4ade80]" : "text-red-400";
+                                        const sign = isPositive ? "+" : "-";
+
+                                        return (
+                                            <tr key={tx.id} className="hover:bg-slate-800/50 transition-colors">
+                                                <td className="px-6 py-4 text-slate-300">
+                                                    {format(tx.date, 'dd MMM', { locale: es })}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="font-medium text-white">{tx.description}</div>
+                                                    <div className="text-xs text-slate-500 capitalize">{tx.type === 'transfer' ? 'Transferencia' : tx.type === 'income' ? 'Ingreso' : 'Gasto'}</div>
+                                                </td>
+                                                <td className={cn("px-6 py-4 text-right font-bold font-mono", colorClass)}>
+                                                    {sign}${tx.amount.toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {accountTransactions.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="px-6 py-12 text-center text-slate-500">
+                                                No hay movimientos en esta cuenta.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </>
                             )}
                         </tbody>
                     </table>
