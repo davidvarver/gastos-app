@@ -92,3 +92,45 @@ create policy "Users can update their own transactions" on transactions
 
 create policy "Users can delete their own transactions" on transactions
   for delete using (auth.uid() = user_id);
+
+-- Subcategories
+create table subcategories (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) not null,
+  category_id uuid references categories(id) on delete cascade not null,
+  name text not null,
+  type text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table subcategories enable row level security;
+
+create policy "Users can view their own subcategories" on subcategories for select using (auth.uid() = user_id);
+create policy "Users can insert their own subcategories" on subcategories for insert with check (auth.uid() = user_id);
+create policy "Users can update their own subcategories" on subcategories for update using (auth.uid() = user_id);
+create policy "Users can delete their own subcategories" on subcategories for delete using (auth.uid() = user_id);
+
+-- Add cardholder to transactions (if not already present via migration, but documenting here for reference)
+-- alter table transactions add column cardholder text; 
+
+-- Recurring Transactions
+create table recurring_transactions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) not null,
+  description text not null,
+  amount numeric not null,
+  type text not null,
+  category_id uuid references categories(id),
+  account_id uuid references accounts(id) not null,
+  to_account_id uuid references accounts(id),
+  day_of_month integer not null,
+  active boolean default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table recurring_transactions enable row level security;
+
+create policy "Users can view their own recurring_transactions" on recurring_transactions for select using (auth.uid() = user_id);
+create policy "Users can insert their own recurring_transactions" on recurring_transactions for insert with check (auth.uid() = user_id);
+create policy "Users can update their own recurring_transactions" on recurring_transactions for update using (auth.uid() = user_id);
+create policy "Users can delete their own recurring_transactions" on recurring_transactions for delete using (auth.uid() = user_id);

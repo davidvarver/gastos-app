@@ -14,12 +14,36 @@ import { CategoryFormModal } from '@/features/categories/components/CategoryForm
 import { Transaction } from '@/db/db';
 
 export function TransactionsPage() {
-    const { transactions, categories, addTransaction, deleteTransactions, updateTransaction } = useTransactions();
+    const {
+        transactions,
+        isLoading,
+        error,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction,
+        deleteTransactions
+    } = useTransactions();
     const { accounts, addAccount, isLoading: accountsLoading } = useAccounts();
-    const { addCategory } = useCategories();
+    const { categories, addCategory } = useCategories();
+    const [filter, setFilter] = useState('');
+    const [isScanOpen, setIsScanOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isScanning, setIsScanning] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    if (error) {
+        return (
+            <div className="p-8 text-center text-red-400">
+                <h2 className="text-xl font-bold mb-2">Error cargando transacciones</h2>
+                <pre className="bg-slate-900 p-4 rounded text-left overflow-auto text-xs">
+                    {JSON.stringify(error, null, 2)}
+                </pre>
+                <p className="mt-4 text-sm text-slate-500">
+                    Intenta recargar la página. Si el error persiste, verifica la consola.
+                </p>
+            </div>
+        );
+    }
 
     const handleScanClick = () => {
         fileInputRef.current?.click();

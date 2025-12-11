@@ -8,6 +8,7 @@ export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[] | undefined>(undefined);
     const [categories, setCategories] = useState<Category[] | undefined>(undefined);
     const [loading, setLoading] = useState(true);
+    const [errorState, setErrorState] = useState<any>(null);
     const { user } = useAuth();
 
     const fetchData = async () => {
@@ -69,6 +70,7 @@ export function useTransactions() {
 
         } catch (error) {
             console.error('Error fetching data:', error);
+            setErrorState(error);
         } finally {
             setLoading(false);
         }
@@ -513,5 +515,6 @@ export function useTransactions() {
         deleteTransactions,
         updateTransaction,
         isLoading: loading,
+        error: errorState
     };
 }
