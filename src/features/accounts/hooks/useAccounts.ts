@@ -143,6 +143,17 @@ export function useAccounts() {
             throw txError;
         }
 
+        // 2. Delete associated recurring transactions
+        const { error: recError } = await supabase
+            .from('recurring_transactions')
+            .delete()
+            .or(`account_id.eq.${id},to_account_id.eq.${id}`);
+
+        if (recError) {
+            fetchAccounts(); // Rollback
+            throw recError;
+        }
+
         // 2. Delete the account
         const { error } = await supabase.from('accounts').delete().eq('id', id);
 
