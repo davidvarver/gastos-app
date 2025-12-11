@@ -1,5 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -14,19 +12,13 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Server misconfiguration: No API Key' });
         }
 
-        // Initialize Gemini
-        const genAI = new GoogleGenerativeAI(apiKey);
-
-        // List of models to try in order of preference
-        // List of models to try in order of preference
-        // We include both with and without "models/" prefix just in case
+        // List of models to try (Exact names from your diagnostic list)
         const modelsToTry = [
-            "models/gemini-2.0-flash-exp",
             "gemini-2.0-flash-exp",
-            "models/gemini-1.5-flash",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-1.5-pro"
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-pro-vision"
         ];
 
         const prompt = `
@@ -44,53 +36,81 @@ export default async function handler(req, res) {
         `;
 
         let lastError = null;
-        let result = null;
+        let resultJson = null;
 
+        // Loop through models manually via REST API
         for (const modelName of modelsToTry) {
             try {
-                console.log(`Attempting to use model: ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
+                console.log(`Attempting raw fetch with model: ${modelName}`);
 
-                result = await model.generateContent([
-                    prompt,
-                    {
-                        inlineData: {
-                            data: image,
-                            mimeType: "image/jpeg"
-                        }
-                    }
-                ]);
+                // Construct the URL manually. Note: we remove 'models/' prefix if present in the array for the URL construction
+                // because the API expects .../models/[NAME]:generateContent
+                // But wait, the previous error said "models/gemini... not found". 
+                // The standard endpoint is https://generativelanguage.googleapis.com/v1beta/models/[NAME]:generateContent
 
-                // If we get here, it worked
-                break;
-            } catch (error) {
-                console.warn(`Model ${modelName} failed:`, error.message);
-                lastError = error;
-                // If it's a 404, continue to next model. If it's auth error, stop.
-                if (!error.message.includes('404') && !error.message.includes('not found')) {
-                    // If it's not a "Not Found" error, it might be something else we can't fix by switching models (like quota or auth)
-                    // But for robustness, let's just keep trying unless we run out.
+                const cleanModelName = modelName.replace('models/', '');
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent?key=${apiKey}`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inline_data: {
+                                        mime_type: "image/jpeg",
+                                        data: image
+                                    }
+                                }
+                            ]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errText}`);
                 }
+
+                const data = await response.json();
+
+                // Check if we have candidates
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("No candidates returned from API");
+                }
+
+                const text = data.candidates[0].content.parts[0].text;
+
+                // Clean the text
+                const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                resultJson = JSON.parse(cleanedText);
+
+                // If success, break loop
+                console.log(`Success with model: ${modelName}`);
+                break;
+
+            } catch (error) {
+                console.warn(`Raw API failed for ${modelName}:`, error.message);
+                lastError = error;
+                // Continue to next model
             }
         }
 
-        if (!result) {
-            throw new Error(`All models failed. Last error: ${lastError?.message}`);
+        if (!resultJson) {
+            throw new Error(`All raw API attempts failed. Last error: ${lastError?.message}`);
         }
 
-        const response = await result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const json = JSON.parse(cleanedText);
-
-        return res.status(200).json(json);
+        return res.status(200).json(resultJson);
 
     } catch (error) {
-        console.error("API Error Trace:", error);
+        console.error("Critical API Error:", error);
         return res.status(500).json({
-            error: 'Failed to analyze receipt',
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: 'Failed to analyze receipt (Raw API)',
+            details: error.message
         });
     }
 }
