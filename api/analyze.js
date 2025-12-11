@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         Do not include markdown formatting like \`\`\`json. Just the raw JSON.
         `;
 
-        let lastError = null;
+        let errorLog = [];
         let resultJson = null;
 
         // Loop through models manually via REST API
@@ -73,7 +73,14 @@ export default async function handler(req, res) {
 
                 if (!response.ok) {
                     const errText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errText}`);
+                    // Try to parse JSON error if possible
+                    let errDetails = errText;
+                    try {
+                        const errJson = JSON.parse(errText);
+                        errDetails = errJson.error?.message || errText;
+                    } catch (e) { /* ignore */ }
+
+                    throw new Error(`HTTP ${response.status}: ${errDetails}`);
                 }
 
                 const data = await response.json();
@@ -95,13 +102,17 @@ export default async function handler(req, res) {
 
             } catch (error) {
                 console.warn(`Raw API failed for ${modelName}:`, error.message);
-                lastError = error;
+                errorLog.push({ model: modelName, error: error.message });
                 // Continue to next model
             }
         }
 
         if (!resultJson) {
-            throw new Error(`All raw API attempts failed. Last error: ${lastError?.message}`);
+            console.error("All attempts failed:", errorLog);
+            return res.status(500).json({
+                error: 'All models failed',
+                debug_log: errorLog
+            });
         }
 
         return res.status(200).json(resultJson);
