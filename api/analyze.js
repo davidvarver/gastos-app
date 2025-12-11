@@ -18,12 +18,28 @@ export default async function handler(req, res) {
         const genAI = new GoogleGenerativeAI(apiKey);
 
         // List of models to try in order of preference
+        // We prioritize 2.0-flash-exp as diagnostic confirmed it is available
         const modelsToTry = [
+            "gemini-2.0-flash-exp",
             "gemini-1.5-flash",
             "gemini-1.5-flash-latest",
             "gemini-1.5-pro",
             "gemini-pro-vision" // Legacy fallback
         ];
+
+        const prompt = `
+        Analyze this receipt image and extract the following transaction details.
+        Return strictly a JSON object with this structure:
+        {
+            "amount": number, // Total amount found
+            "date": "YYYY-MM-DD", // Date of the transaction. If year is missing, assume current year.
+            "description": "string", // Name of establishment + brief summary (e.g. "OXXO - Refrescos y Papas")
+            "category_suggestion": "string" // Suggest one: Comida, Super, Gasolina, Servicios, Salud, Ropa, Restaurante, Otros
+        }
+        
+        If you cannot find a value, use reasonable defaults.
+        Do not include markdown formatting like \`\`\`json. Just the raw JSON.
+        `;
 
         let lastError = null;
         let result = null;
