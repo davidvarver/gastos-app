@@ -16,7 +16,8 @@ export default async function handler(req, res) {
 
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Using specific version 002 to avoid 404 on generic alias in some regions/projects
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
 
         const prompt = `
         Analyze this receipt image and extract the following transaction details.
