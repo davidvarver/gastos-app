@@ -13,12 +13,14 @@ export default async function handler(req, res) {
         }
 
         // List of models to try (Exact names from your diagnostic list)
+        // We prioritize experimental models as 1.5 versions are returning 404s for this key
         const modelsToTry = [
             "gemini-2.0-flash-exp",
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro",
-            "gemini-pro-vision"
+            "gemini-2.0-flash-lite-preview-02-05",
+            "gemini-2.0-pro-exp-02-05",
+            "gemini-exp-1206",
+            "gemini-1.5-flash", // Kept just in case
+            "gemini-1.5-flash-8b"
         ];
 
         const prompt = `
