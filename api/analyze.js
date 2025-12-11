@@ -14,12 +14,13 @@ export default async function handler(req, res) {
 
         // List of models to try (Exact names from your diagnostic list)
         // We prioritize experimental models as 1.5 versions are returning 404s for this key
+        // 2.0 models are returning 429 (Quota Exceeded), so we try exp-1206 which might be less busy
         const modelsToTry = [
-            "gemini-2.0-flash-exp",
-            "gemini-2.0-flash-lite-preview-02-05",
-            "gemini-2.0-pro-exp-02-05",
             "gemini-exp-1206",
-            "gemini-1.5-flash", // Kept just in case
+            "gemini-2.0-flash-lite-preview-02-05",
+            "gemini-2.0-flash-exp",
+            "gemini-2.0-pro-exp-02-05", // Often 404s but worth a shot
+            "gemini-1.5-flash",
             "gemini-1.5-flash-8b"
         ];
 
