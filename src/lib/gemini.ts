@@ -65,6 +65,13 @@ export async function analyzeReceipt(imageFile: File): Promise<AnalyzedReceipt> 
 
     if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+
+        if (err.debug_log) {
+            // Format the debug log into a readable string
+            const logMsg = err.debug_log.map((l: any) => `[${l.model}]: ${l.error}`).join('\n');
+            throw new Error(`All models failed:\n${logMsg}`);
+        }
+
         const errorMessage = err.details || err.error || "Error al analizar el ticket en el servidor";
         throw new Error(errorMessage);
     }
