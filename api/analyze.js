@@ -16,33 +16,49 @@ export default async function handler(req, res) {
 
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using 001 (Stable) as 002 might not be available for all keys/regions yet
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
-        const prompt = `
-        Analyze this receipt image and extract the following transaction details.
-        Return strictly a JSON object with this structure:
-        {
-            "amount": number, // Total amount found
-            "date": "YYYY-MM-DD", // Date of the transaction. If year is missing, assume current year.
-            "description": "string", // Name of establishment + brief summary (e.g. "OXXO - Refrescos y Papas")
-            "category_suggestion": "string" // Suggest one: Comida, Super, Gasolina, Servicios, Salud, Ropa, Restaurante, Otros
-        }
-        
-        If you cannot find a value, use reasonable defaults.
-        Do not include markdown formatting like \`\`\`json. Just the raw JSON.
-        `;
+        // List of models to try in order of preference
+        const modelsToTry = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-pro-vision" // Legacy fallback
+        ];
 
-        // The image comes as base64 string without data prefix from the client
-        const result = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    data: image,
-                    mimeType: "image/jpeg"
+        let lastError = null;
+        let result = null;
+
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`Attempting to use model: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+
+                result = await model.generateContent([
+                    prompt,
+                    {
+                        inlineData: {
+                            data: image,
+                            mimeType: "image/jpeg"
+                        }
+                    }
+                ]);
+
+                // If we get here, it worked
+                break;
+            } catch (error) {
+                console.warn(`Model ${modelName} failed:`, error.message);
+                lastError = error;
+                // If it's a 404, continue to next model. If it's auth error, stop.
+                if (!error.message.includes('404') && !error.message.includes('not found')) {
+                    // If it's not a "Not Found" error, it might be something else we can't fix by switching models (like quota or auth)
+                    // But for robustness, let's just keep trying unless we run out.
                 }
             }
-        ]);
+        }
+
+        if (!result) {
+            throw new Error(`All models failed. Last error: ${lastError?.message}`);
+        }
 
         const response = await result.response;
         const text = response.text();
