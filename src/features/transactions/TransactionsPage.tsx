@@ -56,9 +56,12 @@ export function TransactionsPage() {
             });
             setIsModalOpen(true);
             toast.success("¡Ticket analizado!", { id: toastId });
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Error al analizar el ticket", { id: toastId });
+            toast.error(`Error: ${error.message || "Error desconocido"}`, {
+                id: toastId,
+                duration: 5000
+            });
         } finally {
             setIsScanning(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

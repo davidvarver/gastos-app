@@ -65,7 +65,8 @@ export async function analyzeReceipt(imageFile: File): Promise<AnalyzedReceipt> 
 
     if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || "Error al analizar el ticket en el servidor");
+        const errorMessage = err.details || err.error || "Error al analizar el ticket en el servidor";
+        throw new Error(errorMessage);
     }
 
     return await response.json();
