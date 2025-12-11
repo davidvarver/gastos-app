@@ -266,6 +266,7 @@ export function TransactionsPage() {
                         {isEditMode ? 'Terminar Edición' : 'Editar'}
                     </button>
 
+                    {/* Feature Disabled due to API Key Issues (Leaked Key 403)
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -285,6 +286,7 @@ export function TransactionsPage() {
                         {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                         {isScanning ? 'Analizando...' : 'Escanear'}
                     </button>
+                    */}
 
                     <button
                         onClick={handleAdd}
