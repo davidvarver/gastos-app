@@ -18,13 +18,15 @@ export default async function handler(req, res) {
         const genAI = new GoogleGenerativeAI(apiKey);
 
         // List of models to try in order of preference
-        // We prioritize 2.0-flash-exp as diagnostic confirmed it is available
+        // List of models to try in order of preference
+        // We include both with and without "models/" prefix just in case
         const modelsToTry = [
+            "models/gemini-2.0-flash-exp",
             "gemini-2.0-flash-exp",
+            "models/gemini-1.5-flash",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro",
-            "gemini-pro-vision" // Legacy fallback
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-pro"
         ];
 
         const prompt = `
