@@ -1,20 +1,17 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export const config = {
-    runtime: 'edge', // Optional: Use Vercel Edge Runtime for speed if supported, or remove for Node.js
-};
-
-export default async function handler(request) {
-    if (request.method !== 'POST') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const { image } = await request.json();
+        const { image } = req.body;
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return new Response(JSON.stringify({ error: 'Server misconfiguration: No API Key' }), { status: 500 });
+            console.error("Missing GEMINI_API_KEY environment variable");
+            return res.status(500).json({ error: 'Server misconfiguration: No API Key' });
         }
 
         // Initialize Gemini
@@ -41,7 +38,7 @@ export default async function handler(request) {
             {
                 inlineData: {
                     data: image,
-                    mimeType: "image/jpeg" // We upload as jpeg mostly, or we can pass mime type from client if needed. For now assuming typical mobile photo.
+                    mimeType: "image/jpeg"
                 }
             }
         ]);
@@ -51,13 +48,14 @@ export default async function handler(request) {
         const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const json = JSON.parse(cleanedText);
 
-        return new Response(JSON.stringify(json), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return res.status(200).json(json);
 
     } catch (error) {
-        console.error("API Error:", error);
-        return new Response(JSON.stringify({ error: 'Failed to analyze receipt', details: error.message }), { status: 500 });
+        console.error("API Error Trace:", error);
+        return res.status(500).json({
+            error: 'Failed to analyze receipt',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 }
