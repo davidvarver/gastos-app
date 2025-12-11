@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     try {
         const { image } = req.body;
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
         if (!apiKey) {
             console.error("Missing GEMINI_API_KEY environment variable");
             return res.status(500).json({ error: 'Server misconfiguration: No API Key' });
@@ -16,8 +16,8 @@ export default async function handler(req, res) {
 
         // Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using specific version 002 to avoid 404 on generic alias in some regions/projects
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+        // Using 001 (Stable) as 002 might not be available for all keys/regions yet
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
         const prompt = `
         Analyze this receipt image and extract the following transaction details.
