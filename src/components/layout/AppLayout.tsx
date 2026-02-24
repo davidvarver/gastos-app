@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Wallet, PiggyBank } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -17,17 +18,26 @@ export function AppLayout() {
     const location = useLocation();
 
     return (
-        <div className="flex flex-col h-screen bg-[#0b1121] text-white font-sans overflow-hidden">
-
+        <div className="flex flex-col h-screen bg-midnight-950 text-slate-100 font-sans overflow-hidden">
             {/* Main Content Area */}
-            <main className="flex-1 overflow-auto relative pb-20 md:pb-0">
-                <div className="p-4 md:p-8 max-w-5xl mx-auto">
-                    <Outlet />
+            <main className="flex-1 overflow-auto relative pb-20 md:pb-0 z-10">
+                <div className="p-4 md:p-8 max-w-6xl mx-auto">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={location.pathname}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                        >
+                            <Outlet />
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </main>
 
-            {/* Bottom Navigation (Mobile Style - Always Visible per user request style) */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-[#151e32] border-t border-[#1e293b] px-6 py-3 flex justify-between items-center z-50 md:relative md:hidden">
+            {/* Bottom Navigation (Mobile) */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-midnight-900/80 backdrop-blur-lg border-t border-white/10 px-6 py-3 flex justify-between items-center z-50 md:hidden">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.href;
@@ -36,25 +46,25 @@ export function AppLayout() {
                             key={item.href}
                             to={item.href}
                             className={cn(
-                                "flex flex-col items-center gap-1 transition-colors",
+                                "flex flex-col items-center gap-1 transition-all duration-300",
                                 isActive
-                                    ? "text-[#4ade80]"
+                                    ? "text-blue-400 scale-110"
                                     : "text-slate-500 hover:text-slate-300"
                             )}
                         >
-                            <Icon className={cn("w-6 h-6", isActive && "fill-current opacity-20")} strokeWidth={isActive ? 2.5 : 2} />
+                            <Icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} strokeWidth={isActive ? 2.5 : 2} />
                             <span className="text-[10px] font-medium">{item.label}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            {/* Desktop Sidebar (Optional, if user opens on large screen) */}
-            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 flex-col items-center py-8 bg-[#151e32] border-r border-[#1e293b]">
-                <div className="w-10 h-10 bg-[#4ade80] rounded-xl flex items-center justify-center text-[#0b1121] font-bold text-xl mb-8">
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 flex-col items-center py-8 bg-midnight-900/50 backdrop-blur-md border-r border-white/5 z-20">
+                <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl mb-12 shadow-lg shadow-blue-500/20">
                     G
                 </div>
-                <nav className="flex flex-col gap-6 w-full px-2">
+                <nav className="flex flex-col gap-4 w-full px-3">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.href;
@@ -63,16 +73,21 @@ export function AppLayout() {
                                 key={item.href}
                                 to={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center p-3 rounded-xl transition-all group relative",
+                                    "flex flex-col items-center justify-center p-4 rounded-2xl transition-all group relative overflow-hidden",
                                     isActive
-                                        ? "text-[#4ade80] bg-[#4ade80]/10"
-                                        : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                                        ? "text-blue-400 bg-blue-500/10 shadow-[inset_0_0_12px_rgba(59,130,246,0.1)]"
+                                        : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
                                 )}
                                 title={item.label}
                             >
-                                <Icon className="w-6 h-6" />
+                                <Icon className={cn("w-6 h-6 transition-transform group-hover:scale-110", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} />
                                 {isActive && (
-                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#4ade80] rounded-r-full" />
+                                    <motion.div
+                                        layoutId="sidebar-active"
+                                        className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-full"
+                                        initial={false}
+                                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    />
                                 )}
                             </Link>
                         );
@@ -81,7 +96,7 @@ export function AppLayout() {
             </aside>
 
             {/* Spacer for Desktop Sidebar */}
-            <div className="hidden md:block w-20 flex-shrink-0" />
+            <div className="hidden md:block w-24 flex-shrink-0" />
         </div>
     );
 }

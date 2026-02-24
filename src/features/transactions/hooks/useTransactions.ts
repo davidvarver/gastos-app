@@ -96,13 +96,13 @@ export function useTransactions() {
         };
     }, [user]);
 
-    // Helper to update account balance
+    // Helper to update account balance (Atomic)
     const updateAccountBalance = async (accountId: string, delta: number) => {
-        const { data: account } = await supabase.from('accounts').select('current_balance, initial_balance').eq('id', accountId).single();
-        if (account) {
-            const current = Number(account.current_balance ?? account.initial_balance);
-            await supabase.from('accounts').update({ current_balance: current + delta }).eq('id', accountId);
-        }
+        const { error } = await supabase.rpc('increment_account_balance', {
+            account_id: accountId,
+            delta: delta
+        });
+        if (error) console.error('Error updating balance:', error);
     };
 
     const addTransactions = async (newTransactions: Omit<Transaction, 'id'>[]) => {
@@ -290,31 +290,33 @@ export function useTransactions() {
         // Let's try the "Delete then Add" approach but preserving ID if possible? 
         // No, "Delete" removes it.
 
-        // Manual approach:
-        const { data: oldTx } = await supabase.from('transactions').select('*').eq('id', id).single();
-        if (!oldTx) return;
+        // 1. Get transaction and its related system transactions
+        const { data: oldTxs } = await supabase.from('transactions').select('*').or(`id.eq.${id},related_transaction_id.eq.${id}`);
+        if (!oldTxs || oldTxs.length === 0) return;
 
-        // 1. Revert Old Balance
-        const oldAmount = Number(oldTx.amount);
-        if (oldTx.type === 'income') await updateAccountBalance(oldTx.account_id, -oldAmount);
-        else if (oldTx.type === 'expense') await updateAccountBalance(oldTx.account_id, oldAmount);
-        // (Transfers logic omitted for brevity in update, assuming mostly income/expense edits for now)
+        const mainOldTx = oldTxs.find(t => t.id === id);
+        if (!mainOldTx) return;
 
-        // 2. Delete Related
-        const { data: related } = await supabase.from('transactions').select('*').eq('related_transaction_id', id);
-        if (related) {
-            for (const r of related) {
-                // Revert related balance
-                const rAmount = Number(r.amount);
-                if (r.type === 'transfer') {
-                    await updateAccountBalance(r.account_id, rAmount); // Add back to source
-                    if (r.to_account_id) await updateAccountBalance(r.to_account_id, -rAmount); // Sub from dest
-                }
-                await supabase.from('transactions').delete().eq('id', r.id);
+        // 2. Revert ALL old balances (including Maaser/Refunds)
+        for (const tx of oldTxs) {
+            const amount = Number(tx.amount);
+            if (tx.type === 'income') {
+                await updateAccountBalance(tx.account_id, -amount);
+            } else if (tx.type === 'expense') {
+                await updateAccountBalance(tx.account_id, amount);
+            } else if (tx.type === 'transfer' && tx.to_account_id) {
+                await updateAccountBalance(tx.account_id, amount);
+                await updateAccountBalance(tx.to_account_id, -amount);
             }
         }
 
-        // 3. Update Main
+        // 3. Delete related system transactions (they will be regenerated)
+        const relatedIds = oldTxs.filter(t => t.id !== id).map(t => t.id);
+        if (relatedIds.length > 0) {
+            await supabase.from('transactions').delete().in('id', relatedIds);
+        }
+
+        // 4. Update the main transaction
         const dbUpdates: any = {};
         if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
@@ -329,181 +331,68 @@ export function useTransactions() {
         if (updates.isDeductible !== undefined) dbUpdates.is_deductible = updates.isDeductible;
         if (updates.cardholder !== undefined) dbUpdates.cardholder = updates.cardholder;
 
-        await supabase.from('transactions').update(dbUpdates).eq('id', id);
+        const { data: updatedMain, error: updateError } = await supabase
+            .from('transactions')
+            .update(dbUpdates)
+            .eq('id', id)
+            .select()
+            .single();
 
-        // 4. Apply New Balance
-        // Need to fetch updated tx to be sure
-        const { data: newTx } = await supabase.from('transactions').select('*').eq('id', id).single();
-        let maaserAccount: any = null;
-        if (newTx) {
-            const newAmount = Number(newTx.amount);
-            if (newTx.type === 'income') await updateAccountBalance(newTx.account_id, newAmount);
-            else if (newTx.type === 'expense') await updateAccountBalance(newTx.account_id, -newAmount);
+        if (updateError) throw updateError;
 
-            // 5. Regenerate Maaser
-            let { data: mAccount } = await supabase
-                .from('accounts')
-                .select('*')
-                .ilike('name', 'maaser')
-                .maybeSingle();
+        // 5. Calculate New Effects (Maaser, etc.)
+        const { data: mAccount } = await supabase
+            .from('accounts')
+            .select('*')
+            .ilike('name', 'maaser')
+            .maybeSingle();
 
-            // Check if we need Maaser account
-            const needsMaaser = (newTx.type === 'income' && newTx.is_maaserable !== false) ||
-                (newTx.type === 'expense' && newTx.is_deductible === true);
+        const accountIds = [updatedMain.account_id];
+        if (updatedMain.to_account_id) accountIds.push(updatedMain.to_account_id);
+        const { data: accList } = await supabase.from('accounts').select('*').in('id', accountIds);
+        const accMap = new Map(accList?.map(a => [a.id, a]));
+        const account = accMap.get(updatedMain.account_id);
 
-            if (!mAccount && needsMaaser && user) {
-                // Auto-create Maaser account
-                const { data: newAccount, error: createError } = await supabase
-                    .from('accounts')
-                    .insert([{
-                        user_id: user.id,
-                        name: 'Maaser',
-                        type: 'savings',
-                        currency: 'MXN',
-                        initial_balance: 0,
-                        current_balance: 0,
-                        color: '#a855f7'
-                    }])
-                    .select()
-                    .single();
+        const accountContext = account ? {
+            id: account.id,
+            default_income_maaserable: account.default_income_maaserable,
+            default_expense_deductible: account.default_expense_deductible
+        } : undefined;
 
-                if (createError) console.error("Error auto-creating Maaser account:", createError);
-                else mAccount = newAccount;
-            }
+        // Map updatedMain back to TransactionInput
+        const txInput: any = {
+            ...updatedMain,
+            date: new Date(updatedMain.date),
+            amount: Number(updatedMain.amount),
+            categoryId: updatedMain.category_id,
+            subcategoryId: updatedMain.subcategory_id,
+            accountId: updatedMain.account_id,
+            toAccountId: updatedMain.to_account_id,
+            isMaaserable: updatedMain.is_maaserable,
+            isDeductible: updatedMain.is_deductible,
+            isSystemGenerated: updatedMain.is_system_generated
+        };
 
-            maaserAccount = mAccount;
+        const { txsToInsert, accountDeltas } = calculateTransactionEffects(
+            txInput,
+            user!.id,
+            mAccount,
+            accountContext
+        );
 
-            if (maaserAccount && !newTx.is_system_generated && user) {
-                const isMaaserable = newTx.is_maaserable;
-                const isDeductible = newTx.is_deductible;
-
-                // Income -> 10% to Maaser
-                if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
-                    const rawMaaser = Number(newTx.amount) * 0.10;
-                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
-                    if (maaserAmount > 0) {
-                        const autoTxId = crypto.randomUUID();
-                        const maaserTx = {
-                            id: autoTxId,
-                            user_id: user.id,
-                            date: newTx.date,
-                            amount: maaserAmount,
-                            description: `Maaser (10%): ${newTx.description}`,
-                            type: 'transfer',
-                            account_id: newTx.account_id,
-                            to_account_id: maaserAccount.id,
-                            status: 'cleared',
-                            is_system_generated: true,
-                            related_transaction_id: id
-                        };
-                        await supabase.from('transactions').insert(maaserTx);
-                        await updateAccountBalance(newTx.account_id, -maaserAmount);
-                        await updateAccountBalance(maaserAccount.id, maaserAmount);
-                    }
-                }
-
-                // Deductible Expense -> Refund from Maaser
-                if (newTx.type === 'expense' && isDeductible === true && newTx.account_id !== maaserAccount.id) {
-                    const autoTxId = crypto.randomUUID();
-                    const refundTx = {
-                        id: autoTxId,
-                        user_id: user.id,
-                        date: newTx.date,
-                        amount: Number(newTx.amount),
-                        description: `Reembolso Maaser: ${newTx.description}`,
-                        type: 'transfer',
-                        account_id: maaserAccount.id,
-                        to_account_id: newTx.account_id,
-                        status: 'cleared',
-                        is_system_generated: true,
-                        related_transaction_id: id
-                    };
-                    await supabase.from('transactions').insert(refundTx);
-                    await updateAccountBalance(maaserAccount.id, -Number(newTx.amount));
-                    await updateAccountBalance(newTx.account_id, Number(newTx.amount));
-                }
-            }
+        // 6. Insert ANY NEW system transactions (calculateTransactionEffects returns the main one too, we filter it out)
+        const systemTxs = txsToInsert.filter(t => t.id !== id);
+        if (systemTxs.length > 0) {
+            const { error: insError } = await supabase.from('transactions').insert(systemTxs);
+            if (insError) throw insError;
         }
 
-        // Optimistic Update
-        // Optimistic Update
-        setTransactions(prev => {
-            if (!prev) return prev;
+        // 7. Apply New Balances
+        for (const [accId, delta] of Object.entries(accountDeltas)) {
+            await updateAccountBalance(accId, delta);
+        }
 
-            // 1. Remove old related transactions (Maaser/Refunds)
-            let newTxs = prev.filter(t => t.relatedTransactionId !== id);
-
-            // 2. Update the main transaction
-            newTxs = newTxs.map(t => {
-                if (t.id === id) {
-                    return { ...t, ...updates, date: updates.date || t.date };
-                }
-                return t;
-            });
-
-            // 3. Add new related transactions (if any were generated)
-            // We need to reconstruct the objects we just inserted.
-            // Since we don't have the full object returned from DB yet in this flow (we inserted blindly),
-            // we construct them from the data we used to insert.
-
-            if (maaserAccount && !newTx.is_system_generated && user) {
-                const isMaaserable = newTx.is_maaserable;
-                const isDeductible = newTx.is_deductible;
-
-                // Re-calculate to see if we added anything (Logic duplicated from above, but needed for UI)
-                if (newTx.type === 'income' && isMaaserable !== false && newTx.account_id !== maaserAccount.id) {
-                    const rawMaaser = Number(newTx.amount) * 0.10;
-                    const maaserAmount = Math.round(rawMaaser * 100) / 100;
-                    if (maaserAmount > 0) {
-                        // We don't have the ID we generated above easily accessible unless we scoped it better.
-                        // Let's assume we can't perfectly match the ID without refactoring, 
-                        // but for UI purposes, a random ID is fine until refetch.
-                        // Wait, we DO have the ID if we move the generation up or capture it.
-                        // But the scope above is inside the if block. 
-                        // For now, I'll generate a temporary ID for the UI. It will be replaced by Realtime update shortly.
-                        newTxs.push({
-                            id: crypto.randomUUID(), // Temp ID
-                            date: new Date(newTx.date),
-                            amount: maaserAmount,
-                            description: `Maaser (10%): ${newTx.description}`,
-                            type: 'transfer',
-                            categoryId: undefined, // System txs usually don't have category or have a special one
-                            accountId: newTx.account_id,
-                            toAccountId: maaserAccount.id,
-                            status: 'cleared',
-                            notes: '',
-                            relatedTransactionId: id,
-                            isSystemGenerated: true,
-                            isMaaserable: false,
-                            isDeductible: false
-                        });
-                    }
-                }
-
-                if (newTx.type === 'expense' && isDeductible === true && newTx.account_id !== maaserAccount.id) {
-                    // ... Refund logic for UI ...
-                    const refundAmount = Number(newTx.amount);
-                    newTxs.push({
-                        id: crypto.randomUUID(),
-                        date: new Date(newTx.date),
-                        amount: refundAmount,
-                        description: `Reembolso Maaser: ${newTx.description}`,
-                        type: 'transfer',
-                        categoryId: undefined,
-                        accountId: maaserAccount.id,
-                        toAccountId: newTx.account_id,
-                        status: 'cleared',
-                        notes: '',
-                        relatedTransactionId: id,
-                        isSystemGenerated: true,
-                        isMaaserable: false,
-                        isDeductible: false
-                    });
-                }
-            }
-
-            return newTxs.sort((a, b) => b.date.getTime() - a.date.getTime());
-        });
+        fetchData(); // Simplest way to ensure UI is in sync after complex update
     };
 
     return {

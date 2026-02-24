@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 
 export function LoginPage() {
@@ -96,6 +96,15 @@ export function LoginPage() {
                             {message.text}
                         </div>
                     )}
+
+                    <div className="flex items-center justify-end">
+                        <Link
+                            to="/forgot-password"
+                            className="text-sm font-medium text-[#4ade80] hover:text-[#4ade80]/80"
+                        >
+                            ¿Olvidaste tu contraseña?
+                        </Link>
+                    </div>
 
                     <div>
                         <button

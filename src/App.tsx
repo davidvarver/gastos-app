@@ -8,6 +8,8 @@ import { RecurringPage } from './features/transactions/RecurringPage';
 import { ImportPage } from './features/import/ImportPage';
 import { SavingsPage } from './features/savings/SavingsPage';
 import { LoginPage } from './features/auth/LoginPage';
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { UpdatePasswordPage } from './features/auth/UpdatePasswordPage';
 // import { RegisterPage } from './features/auth/RegisterPage'; // Not implemented yet?
 import { AuthProvider } from './features/auth/AuthProvider';
 import { ProtectedRoute } from './features/auth/ProtectedRoute'; // Assuming it's here or I need to create it
@@ -20,6 +22,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/update-password" element={<UpdatePasswordPage />} />
           {/* <Route path="/register" element={<RegisterPage />} /> */}
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
