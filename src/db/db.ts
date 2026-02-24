@@ -1,5 +1,3 @@
-import Dexie, { type EntityTable } from 'dexie';
-
 // Interfaces
 export interface Account {
     id: string;
@@ -81,25 +79,3 @@ export interface RecurringTransaction {
     dayOfMonth: number; // 1-31
     active: boolean;
 }
-
-// Database Class
-class ExpenseDB extends Dexie {
-    accounts!: EntityTable<Account, 'id'>;
-    categories!: EntityTable<Category, 'id'>;
-    transactions!: EntityTable<Transaction, 'id'>;
-    importPatterns!: EntityTable<ImportPattern, 'id'>;
-    monthlySnapshots!: EntityTable<MonthlySnapshot, 'id'>;
-
-    constructor() {
-        super('ExpenseTrackerDB');
-        this.version(1).stores({
-            accounts: 'id, name, type',
-            categories: 'id, name, type',
-            transactions: 'id, date, accountId, categoryId, type, relatedTransactionId',
-            importPatterns: 'id, pattern, categoryId',
-            monthlySnapshots: 'id, month'
-        });
-    }
-}
-
-export const db = new ExpenseDB();
