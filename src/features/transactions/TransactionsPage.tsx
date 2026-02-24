@@ -392,7 +392,8 @@ export function TransactionsPage() {
             </div>
 
             <div className="glass-card overflow-hidden shadow-2xl">
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm text-left border-collapse">
                         <thead>
                             <tr className="bg-midnight-900 border-b border-white/10 text-slate-500 font-bold text-[10px] uppercase tracking-[0.15em]">
@@ -571,16 +572,69 @@ export function TransactionsPage() {
                                     </motion.tr>
                                 );
                             })}
-                            {filteredTransactions?.length === 0 && (
-                                <tr>
-                                    <td colSpan={10} className="px-6 py-20 text-center text-slate-600 font-medium italic">
-                                        {searchTerm ? "No se encontraron resultados para tu búsqueda." : "No hay transacciones registradas."}
-                                    </td>
-                                </tr>
-                            )}
                         </tbody>
                     </table>
                 </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-white/5">
+                    {filteredTransactions?.map((tx, idx) => {
+                        const category = categories?.find(c => c.id === tx.categoryId);
+                        const account = accounts?.find(a => a.id === tx.accountId);
+                        const isSelected = selectedIds.has(tx.id);
+
+                        return (
+                            <motion.div
+                                key={tx.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: Math.min(idx * 0.05, 0.5) }}
+                                onClick={() => openEditModal(tx)}
+                                className={cn(
+                                    "p-4 active:bg-white/10 transition-colors relative",
+                                    isSelected ? "bg-blue-500/5" : ""
+                                )}
+                            >
+                                <div className="flex justify-between items-start mb-1">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
+                                            {format(tx.date, 'dd MMM yyyy', { locale: es })}
+                                        </span>
+                                        <span className="font-bold text-slate-100 line-clamp-1">{tx.description}</span>
+                                    </div>
+                                    <div className={cn(
+                                        "text-lg font-black tracking-tighter",
+                                        tx.type === 'income' ? "text-emerald-400" : "text-slate-100"
+                                    )}>
+                                        {tx.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(tx.amount)}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {category && (
+                                        <div className="flex items-center gap-1.5 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: category.color }} />
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase">{category.name}</span>
+                                        </div>
+                                    )}
+                                    <span className="text-[10px] font-black text-blue-400/80 uppercase tracking-wider bg-blue-500/5 px-2 py-0.5 rounded-full border border-blue-500/10">
+                                        {account?.name}
+                                    </span>
+                                    {tx.cardholder && (
+                                        <span className="text-[10px] text-slate-500 font-medium italic">
+                                            • {tx.cardholder}
+                                        </span>
+                                    )}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+
+                {(filteredTransactions?.length === 0) && (
+                    <div className="px-6 py-20 text-center text-slate-600 font-medium italic">
+                        {searchTerm ? "No se encontraron resultados para tu búsqueda." : "No hay transacciones registradas."}
+                    </div>
+                )}
             </div>
 
             {isModalOpen && (

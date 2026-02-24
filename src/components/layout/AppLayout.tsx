@@ -37,8 +37,8 @@ export function AppLayout() {
             </main>
 
             {/* Bottom Navigation (Mobile) */}
-            <nav className="fixed bottom-0 left-0 right-0 bg-midnight-900/80 backdrop-blur-lg border-t border-white/10 px-6 py-3 flex justify-between items-center z-50 md:hidden">
-                {navItems.map((item) => {
+            <nav className="fixed bottom-0 left-0 right-0 bg-midnight-900/80 backdrop-blur-xl border-t border-white/10 px-2 py-3 flex justify-around items-center z-50 md:hidden">
+                {navItems.filter(item => ['/', '/transactions', '/accounts', '/categories', '/import'].includes(item.href)).map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.href;
                     return (
@@ -46,14 +46,19 @@ export function AppLayout() {
                             key={item.href}
                             to={item.href}
                             className={cn(
-                                "flex flex-col items-center gap-1 transition-all duration-300",
+                                "flex flex-col items-center gap-1 transition-all duration-300 min-w-[64px]",
                                 isActive
-                                    ? "text-blue-400 scale-110"
+                                    ? "text-blue-400 scale-105"
                                     : "text-slate-500 hover:text-slate-300"
                             )}
                         >
-                            <Icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} strokeWidth={isActive ? 2.5 : 2} />
-                            <span className="text-[10px] font-medium">{item.label}</span>
+                            <div className={cn(
+                                "p-1 rounded-xl transition-all",
+                                isActive && "bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+                            )}>
+                                <Icon className={cn("w-5 h-5", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} strokeWidth={isActive ? 2.5 : 2} />
+                            </div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider">{item.label}</span>
                         </Link>
                     );
                 })}

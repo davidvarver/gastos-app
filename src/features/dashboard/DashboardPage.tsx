@@ -51,9 +51,9 @@ export function DashboardPage() {
                     <p className="text-slate-400 mt-1">Tu salud financiera de un vistazo.</p>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3">
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
                     {/* Account Filter */}
-                    <div className="relative group">
+                    <div className="relative group flex-1 sm:flex-none">
                         <select
                             value={selectedAccountId}
                             onChange={(e) => setSelectedAccountId(e.target.value)}
@@ -69,22 +69,22 @@ export function DashboardPage() {
                     </div>
 
                     {/* Cardholder Filter */}
-                    <div className="relative group">
+                    <div className="relative group flex-1 sm:flex-none">
                         <input
                             type="text"
-                            placeholder="Tarjetahabiente..."
+                            placeholder="Titular..."
                             value={filterCardholder}
                             onChange={(e) => setFilterCardholder(e.target.value)}
-                            className="bg-midnight-900/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none hover:bg-white/5 transition-all w-[150px]"
+                            className="bg-midnight-900/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none hover:bg-white/5 transition-all w-full sm:w-[150px]"
                         />
                     </div>
 
                     {/* Month Navigator */}
-                    <div className="flex items-center bg-midnight-900/50 backdrop-blur-md rounded-2xl border border-white/10 p-1.5 shadow-lg">
+                    <div className="flex items-center justify-between sm:justify-start bg-midnight-900/50 backdrop-blur-md rounded-2xl border border-white/10 p-1.5 shadow-lg w-full sm:w-auto">
                         <button onClick={handlePrevMonth} className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="px-4 font-semibold text-white min-w-[140px] text-center capitalize tracking-wider">
+                        <span className="px-4 font-semibold text-white min-w-[120px] sm:min-w-[140px] text-center capitalize tracking-wider text-sm">
                             {format(currentDate, 'MMMM yyyy', { locale: es })}
                         </span>
                         <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95">
