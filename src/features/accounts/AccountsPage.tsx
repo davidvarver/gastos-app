@@ -123,19 +123,19 @@ function AccountDetailsModal({ account, onClose }: { account: Account; onClose: 
                 className="bg-midnight-900 border border-white/10 rounded-[2.5rem] w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl relative z-10 overflow-hidden"
             >
                 {/* Header */}
-                <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div className="p-5 md:p-8 border-b border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/5">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-2xl font-black text-white">{account.name}</h3>
+                            <h3 className="text-xl md:text-2xl font-black text-white">{account.name}</h3>
                             <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 uppercase tracking-widest">
                                 {account.type}
                             </span>
                         </div>
-                        <p className="text-slate-400 text-sm font-medium">Historial completo de movimientos</p>
+                        <p className="text-slate-400 text-xs md:text-sm font-medium">Historial completo de movimientos</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Saldo Actual</p>
-                        <p className="text-3xl font-black text-emerald-400 tracking-tighter shadow-emerald-500/10 drop-shadow-sm">
+                        <p className="text-2xl md:text-3xl font-black text-emerald-400 tracking-tighter shadow-emerald-500/10 drop-shadow-sm">
                             {new Intl.NumberFormat('es-MX', { style: 'currency', currency: account.currency }).format(account.currentBalance ?? account.initialBalance)}
                         </p>
                     </div>
@@ -162,19 +162,19 @@ function AccountDetailsModal({ account, onClose }: { account: Account; onClose: 
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.03 }}
-                                        className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all group"
+                                        className="flex items-center justify-between p-3 md:p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all group"
                                     >
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-3 md:gap-4">
                                             <div className={cn(
-                                                "p-3 rounded-xl shadow-lg",
+                                                "p-2 md:p-3 rounded-xl shadow-lg",
                                                 isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
                                             )}>
-                                                {tx.type === 'income' ? <ArrowUpRight className="w-5 h-5" /> :
-                                                    tx.type === 'expense' ? <ArrowDownLeft className="w-5 h-5" /> :
-                                                        <ArrowRightLeft className="w-5 h-5" />}
+                                                {tx.type === 'income' ? <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" /> :
+                                                    tx.type === 'expense' ? <ArrowDownLeft className="w-4 h-4 md:w-5 md:h-5" /> :
+                                                        <ArrowRightLeft className="w-4 h-4 md:w-5 md:h-5" />}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-white group-hover:text-blue-200 transition-colors">{tx.description}</div>
+                                                <div className="font-bold text-sm md:text-base text-white group-hover:text-blue-200 transition-colors line-clamp-1">{tx.description}</div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Calendar className="w-3 h-3 text-slate-600" />
                                                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
