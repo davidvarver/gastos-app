@@ -97,30 +97,54 @@ export function DashboardPage() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: 'Ingresos', val: income, icon: ArrowUpCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-                    { title: 'Gastos', val: expense, icon: ArrowDownCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-                    { title: 'Balance Neto', val: net, icon: Wallet, color: net >= 0 ? "text-blue-400" : "text-rose-400", bg: 'bg-blue-500/10' },
-                    { title: 'Maaser (10%)', val: maaser, icon: PiggyBank, color: 'text-purple-400', bg: 'bg-purple-500/10', isMaaser: true }
+                    { title: 'Ingresos', val: income, icon: ArrowUpCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', glow: 'group-hover:shadow-emerald-500/20' },
+                    { title: 'Gastos', val: expense, icon: ArrowDownCircle, color: 'text-rose-400', bg: 'bg-rose-500/10', glow: 'group-hover:shadow-rose-500/20' },
+                    { title: 'Balance Neto', val: net, icon: Wallet, color: net >= 0 ? "text-blue-400" : "text-rose-400", bg: 'bg-blue-500/10', glow: 'group-hover:shadow-blue-500/20' },
+                    { title: 'Maaser (10%)', val: maaser, icon: PiggyBank, color: 'text-purple-400', bg: 'bg-purple-500/10', isMaaser: true, glow: 'group-hover:shadow-purple-500/20' }
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.title}
                         variants={itemVariants}
-                        className="glass-card p-6 relative overflow-hidden group hover:shadow-2xl hover:shadow-blue-500/10 transition-shadow duration-500"
+                        whileHover={{ y: -5, scale: 1.02 }}
+                        className={cn(
+                            "glass-card p-6 relative overflow-hidden group transition-all duration-500",
+                            stat.glow
+                        )}
                     >
-                        <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-bl-full -mr-12 -mt-12 transition-transform duration-700 group-hover:scale-110", stat.bg)} />
-                        <div className="flex flex-row items-center justify-between pb-4">
+                        <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-bl-full -mr-12 -mt-12 transition-transform duration-700 group-hover:scale-125", stat.bg)} />
+
+                        {/* Interactive Sparkle Effect on Hover */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+                        <div className="flex flex-row items-center justify-between pb-4 relative z-10">
                             <h3 className="text-sm font-semibold text-slate-400 tracking-wider uppercase">{stat.title}</h3>
-                            <stat.icon className={cn("h-5 w-5", stat.color)} />
+                            <stat.icon className={cn("h-5 w-5 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110", stat.color)} />
                         </div>
-                        <div className="space-y-1">
-                            <div className={cn("text-3xl font-bold tracking-tight", stat.val < 0 ? 'text-rose-400' : 'text-white')}>
+
+                        <div className="space-y-1 relative z-10">
+                            <motion.div
+                                key={stat.val}
+                                initial={{ scale: 0.95, opacity: 0.8 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                                className={cn("text-3xl font-black tracking-tight flex items-center gap-2", stat.val < 0 ? 'text-rose-400' : 'text-white')}
+                            >
                                 {isLoading ? (
                                     <div className="h-8 w-24 bg-white/5 animate-pulse rounded-lg" />
                                 ) : (
-                                    formatCurrency(stat.val)
+                                    <>
+                                        {formatCurrency(stat.val)}
+                                        {/* Animated pulse indicator when value changes */}
+                                        <motion.div
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                                            transition={{ duration: 1 }}
+                                            className={cn("absolute inset-0 rounded-lg pointer-events-none", stat.bg)}
+                                        />
+                                    </>
                                 )}
-                            </div>
-                            <p className="text-xs text-slate-500 font-medium tracking-wide">
+                            </motion.div>
+                            <p className="text-xs text-slate-500 font-bold tracking-widest uppercase opacity-80">
                                 {stat.isMaaser ? 'Basado en ingreso neto' : 'Total este mes'}
                             </p>
                         </div>

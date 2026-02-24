@@ -26,15 +26,13 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                 name: format(date, 'MMM', { locale: es }),
                 fullName: format(date, 'MMMM yyyy', { locale: es }),
                 income: 0,
-                expense: 0
+                expense: 0,
+                isCurrentMonth: i === timeRange - 1
             };
         });
 
         transactions.forEach(tx => {
-            // Account Filter
             if (accountId && accountId !== 'all' && tx.accountId !== accountId) return;
-
-            // Cardholder Filter
             if (cardholder && cardholder !== 'all' && (!tx.cardholder || !tx.cardholder.toLowerCase().includes(cardholder.toLowerCase()))) return;
 
             const txDate = new Date(tx.date);
@@ -51,23 +49,42 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
             }
         });
 
-        return months;
-    }, [transactions, timeRange, accountId]);
+        // Calculate Average Expense (Benchmark) for the last 3 months (excluding current)
+        const pastMonths = months.slice(-4, -1); // Previous 3 months
+        const avgExpense = pastMonths.length > 0
+            ? pastMonths.reduce((acc, m) => acc + m.expense, 0) / pastMonths.length
+            : 0;
+
+        // Calculate Projection for current month
+        const currentMonth = months[months.length - 1];
+        const daysInMonth = new Date(currentMonth.monthObj.getFullYear(), currentMonth.monthObj.getMonth() + 1, 0).getDate();
+        const currentDay = Math.max(1, new Date().getDate());
+        const projectedExpense = (currentMonth.expense / currentDay) * daysInMonth;
+
+        return months.map(m => ({
+            ...m,
+            benchmark: avgExpense,
+            projection: m.isCurrentMonth ? projectedExpense : null
+        }));
+    }, [transactions, timeRange, accountId, cardholder]);
 
     return (
-        <Card className="bg-[#151e32] border-[#1e293b]">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-white text-lg">Ingresos vs Gastos</CardTitle>
-                <div className="flex bg-[#0b1121] rounded-lg p-1 border border-[#1e293b]">
+        <Card className="bg-[#151e32] border-[#1e293b] overflow-hidden group/chart">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 relative z-10">
+                <div>
+                    <CardTitle className="text-white text-lg">Análisis de Flujo</CardTitle>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">Benchmarks y proyecciones basadas en IA local</p>
+                </div>
+                <div className="flex bg-[#0b1121] rounded-xl p-1 border border-white/5">
                     {[3, 6, 12].map((range) => (
                         <button
                             key={range}
                             onClick={() => setTimeRange(range as 3 | 6 | 12)}
                             className={cn(
-                                "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                                "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
                                 timeRange === range
-                                    ? "bg-[#1e293b] text-white shadow-sm"
-                                    : "text-slate-400 hover:text-slate-200 hover:bg-[#1e293b]/50"
+                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                                    : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
                             )}
                         >
                             {range}M
@@ -75,31 +92,64 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                     ))}
                 </div>
             </CardHeader>
-            <CardContent>
-                <div className="h-[300px] w-full">
+            <CardContent className="relative z-10">
+                <div className="h-[300px] w-full mt-4">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                             onClick={(state: any) => {
-                                // Recharts click handler can be tricky. 
-                                // We need to find the active payload which corresponds to the clicked bar.
                                 if (state && state.activePayload && state.activePayload.length > 0) {
                                     const payload = state.activePayload[0].payload;
                                     if (payload && payload.monthObj && onMonthClick) {
-                                        onMonthClick(new Date(payload.monthObj)); // Ensure it's a Date object
+                                        onMonthClick(new Date(payload.monthObj));
                                     }
                                 }
                             }}
                             className={cn(onMonthClick ? "cursor-pointer" : "")}
                         >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                            <XAxis dataKey="name" stroke="#94a3b8" tick={{ fill: '#94a3b8' }} />
-                            <YAxis stroke="#94a3b8" tick={{ fill: '#94a3b8' }} tickFormatter={(value) => `$${value / 1000}k`} />
+                            <defs>
+                                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0.1} />
+                                </linearGradient>
+                                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#f87171" stopOpacity={0.1} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.5} />
+                            <XAxis
+                                dataKey="name"
+                                stroke="#475569"
+                                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                axisLine={false}
+                                tickLine={false}
+                                dy={10}
+                            />
+                            <YAxis
+                                stroke="#475569"
+                                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                tickFormatter={(value) => `$${value / 1000}k`}
+                                axisLine={false}
+                                tickLine={false}
+                            />
                             <Tooltip
-                                cursor={{ fill: '#1e293b', opacity: 0.4 }}
-                                contentStyle={{ backgroundColor: '#0b1121', borderColor: '#1e293b', color: '#fff' }}
-                                formatter={(value: number) => [`$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(value)}`, '']}
+                                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
+                                contentStyle={{
+                                    backgroundColor: '#0b1121cc',
+                                    backdropFilter: 'blur(12px)',
+                                    borderColor: 'rgba(255,255,255,0.1)',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                                    color: '#fff',
+                                    padding: '12px'
+                                }}
+                                formatter={(value: number, name: string) => {
+                                    const formatted = `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(value)}`;
+                                    if (name === "projection") return [formatted, "Estimado fin de mes"];
+                                    return [formatted, name.charAt(0).toUpperCase() + name.slice(1)];
+                                }}
                                 labelFormatter={(label, payload) => {
                                     if (payload && payload[0] && payload[0].payload) {
                                         return payload[0].payload.fullName;
@@ -107,9 +157,33 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                                     return label;
                                 }}
                             />
-                            <Legend />
-                            <Bar dataKey="income" name="Ingresos" fill="#4ade80" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="expense" name="Gastos" fill="#f87171" radius={[4, 4, 0, 0]} />
+                            <Legend
+                                verticalAlign="top"
+                                align="right"
+                                iconType="circle"
+                                wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                            />
+                            <Bar dataKey="income" name="Ingresos" fill="url(#incomeGradient)" radius={[6, 6, 0, 0]} barSize={20} />
+                            <Bar dataKey="expense" name="Gastos" fill="url(#expenseGradient)" radius={[6, 6, 0, 0]} barSize={20} />
+
+                            {/* Projection Bar (Dashed or Opacity) */}
+                            <Bar dataKey="projection" name="Proyección" fill="#f87171" radius={[6, 6, 0, 0]} barSize={8} opacity={0.3} />
+
+                            {/* Benchmark Reference Line */}
+                            <svg>
+                                {data.length > 0 && (
+                                    <line
+                                        x1="0"
+                                        y1={data[0].benchmark}
+                                        x2="100%"
+                                        y2={data[0].benchmark}
+                                        stroke="#facc15"
+                                        strokeDasharray="5 5"
+                                        strokeWidth={1}
+                                        opacity={0.5}
+                                    />
+                                )}
+                            </svg>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

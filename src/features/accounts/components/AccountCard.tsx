@@ -19,7 +19,13 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
         <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="glass-card p-6 shadow-2xl relative group overflow-hidden"
+            className={cn(
+                "glass-card p-6 shadow-2xl relative group overflow-hidden transition-all duration-500",
+                isBusiness ? "hover:shadow-amber-500/10" :
+                    isWallet ? "hover:shadow-emerald-500/10" :
+                        isInvestment ? "hover:shadow-purple-500/10" :
+                            "hover:shadow-blue-500/10"
+            )}
         >
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-500/10 transition-colors" />
 
