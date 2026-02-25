@@ -286,12 +286,12 @@ export function useTransactions() {
         }
 
         // 4. Update the main transaction
-        const dbUpdates: Partial<TransactionDB> = {};
+        const dbUpdates: Record<string, any> = {};
         if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
         if (updates.date !== undefined) dbUpdates.date = updates.date.toISOString();
-        if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
-        if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId || null;
+        if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId ?? null;
+        if (updates.subcategoryId !== undefined) dbUpdates.subcategory_id = updates.subcategoryId ?? null;
         if (updates.accountId !== undefined) dbUpdates.account_id = updates.accountId;
         if (updates.toAccountId !== undefined) dbUpdates.to_account_id = updates.toAccountId;
         if (updates.status !== undefined) dbUpdates.status = updates.status;

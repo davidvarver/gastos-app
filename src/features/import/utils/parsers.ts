@@ -61,7 +61,7 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                     return undefined;
                 };
 
-                results.data.forEach((row: Record<string, unknown>) => {
+                (results.data as Array<Record<string, unknown>>).forEach((row) => {
                     try {
                         // Normalize Date
                         let dateStr = getColumnValue(row, ['Fecha', 'Date', 'FECHA']);

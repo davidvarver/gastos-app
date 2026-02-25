@@ -3,6 +3,7 @@ import { Plus, Calendar, Trash2, Edit2, Play, CheckCircle2, XCircle } from 'luci
 import { useRecurringTransactions } from './hooks/useRecurringTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useTransactions } from './hooks/useTransactions';
+import { RecurringTransaction } from '@/db/db';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -89,7 +90,7 @@ export function RecurringPage() {
         setEditingId(null);
     };
 
-    const handleEdit = (item: typeof recurring[0]) => {
+    const handleEdit = (item: RecurringTransaction) => {
         setFormData({
             description: item.description,
             amount: String(item.amount),

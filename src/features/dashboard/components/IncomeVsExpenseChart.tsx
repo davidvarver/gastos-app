@@ -98,7 +98,7 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            onClick={(state: { activePayload?: Array<{ payload: Record<string, unknown> }> }) => {
+                            onClick={(state: any) => {
                                 if (state && state.activePayload && state.activePayload.length > 0) {
                                     const payload = state.activePayload[0].payload as Record<string, unknown>;
                                     if (payload && payload.monthObj && onMonthClick) {

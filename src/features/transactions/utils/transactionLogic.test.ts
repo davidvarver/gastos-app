@@ -23,8 +23,8 @@ describe('Transaction Logic (TestSprite Audit)', () => {
 
         const maaserTx = result.txsToInsert.find(t => t.is_system_generated);
         expect(maaserTx).toBeDefined();
-        expect(maaserTx.amount).toBe(100); // 10% of 1000
-        expect(maaserTx.to_account_id).toBe(mockMaaserAccount.id);
+        expect(maaserTx!.amount).toBe(100); // 10% of 1000
+        expect(maaserTx!.to_account_id).toBe(mockMaaserAccount.id);
     });
 
     it('should handle floating point precision in Maaser calculation', () => {
@@ -42,7 +42,7 @@ describe('Transaction Logic (TestSprite Audit)', () => {
         const result = calculateTransactionEffects(input, mockUser, mockMaaserAccount, mockAccount);
         const maaserTx = result.txsToInsert.find(t => t.is_system_generated);
 
-        expect(maaserTx.amount).toBe(1.02);
+        expect(maaserTx!.amount).toBe(1.02);
     });
 
     it('should NOT generate Maaser if isMaaserable is false', () => {
@@ -77,9 +77,10 @@ describe('Transaction Logic (TestSprite Audit)', () => {
         expect(result.txsToInsert).toHaveLength(2);
 
         const refundTx = result.txsToInsert.find(t => t.is_system_generated);
-        expect(refundTx.amount).toBe(500);
-        expect(refundTx.account_id).toBe(mockMaaserAccount.id); // From Maaser
-        expect(refundTx.to_account_id).toBe('acc-1'); // To User Account
+        expect(refundTx).toBeDefined();
+        expect(refundTx!.amount).toBe(500);
+        expect(refundTx!.account_id).toBe(mockMaaserAccount.id); // From Maaser
+        expect(refundTx!.to_account_id).toBe('acc-1'); // To User Account
     });
 
     it('should calculate Balance Deltas correctly for Income + Maaser', () => {

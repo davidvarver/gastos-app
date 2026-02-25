@@ -51,7 +51,7 @@ export function calculateTransactionEffects(
 
     const txId = txData.id || crypto.randomUUID();
 
-    const dbTx = {
+    const dbTx: TransactionForInsert = {
         id: txId,
         user_id: user_id,
         date: txData.date.toISOString(),
@@ -62,7 +62,7 @@ export function calculateTransactionEffects(
         subcategory_id: txData.subcategoryId || null,
         account_id: txData.accountId,
         to_account_id: txData.toAccountId,
-        status: txData.status,
+        status: txData.status as 'pending' | 'cleared',
         notes: txData.notes,
         is_system_generated: txData.isSystemGenerated ?? false,
         is_maaserable: isMaaserable,

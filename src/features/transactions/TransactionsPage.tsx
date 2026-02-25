@@ -664,7 +664,7 @@ export function TransactionsPage() {
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
                 onSave={async (cat) => {
-                    await addCategory({ ...cat, icon: 'tag' });
+                    await addCategory({ name: cat.name || 'Nueva Categoría', type: cat.type, color: cat.color || '#3b82f6', icon: 'tag' });
                     setIsCategoryModalOpen(false);
                 }}
             />
