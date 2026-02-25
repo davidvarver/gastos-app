@@ -25,17 +25,29 @@ export default async function handler(req, res) {
         ];
 
         const prompt = `
-        Analyze this receipt image and extract the following transaction details.
+        Analyze this receipt image and extract transaction details.
+
         Return strictly a JSON object with this structure:
         {
             "amount": number, // Total amount found
             "date": "YYYY-MM-DD", // Date of the transaction. If year is missing, assume current year.
-            "description": "string", // Name of establishment + brief summary (e.g. "OXXO - Refrescos y Papas")
-            "category_suggestion": "string" // Suggest one: Comida, Super, Gasolina, Servicios, Salud, Ropa, Restaurante, Otros
+            "description": "string", // Name of establishment (e.g. "Starbucks", "OXXO", "Whole Foods")
+            "category_suggestion": "string", // Suggest one: Comida, Super, Gasolina, Servicios, Salud, Ropa, Restaurante, Otros
+            "items": [
+                {
+                    "description": "string", // Individual item name (e.g. "Café", "Galleta", "Agua")
+                    "amount": number, // Item price
+                    "category_suggestion": "string"  // Category for this specific item
+                }
+            ]
         }
-        
-        If you cannot find a value, use reasonable defaults.
-        Do not include markdown formatting like \`\`\`json. Just the raw JSON.
+
+        IMPORTANT:
+        - If you can identify individual items from the receipt, list them in "items" array
+        - If items are not clearly visible, use the total amount as a single item
+        - Each item should have its own price
+        - Do not include markdown formatting like \`\`\`json. Just the raw JSON.
+        - Always include the total amount and establishment name
         `;
 
         let errorLog = [];

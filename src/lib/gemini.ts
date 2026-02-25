@@ -1,8 +1,15 @@
+export interface ReceiptItem {
+    description: string;
+    amount: number;
+    category_suggestion: string;
+}
+
 export interface AnalyzedReceipt {
     amount: number;
     date: string;
     description: string;
     category_suggestion: string;
+    items?: ReceiptItem[];
 }
 
 export async function analyzeReceipt(imageFile: File): Promise<AnalyzedReceipt> {

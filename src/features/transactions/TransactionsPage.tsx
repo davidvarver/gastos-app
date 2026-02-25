@@ -172,6 +172,93 @@ export function TransactionsPage() {
         setSelectedIds(new Set());
     };
 
+    const handleScanClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsScanning(true);
+        const toastId = toast.loading("Analizando recibo con IA...");
+
+        try {
+            const data = await analyzeReceipt(file);
+
+            // Find category ID based on suggestion
+            let categoryId = '';
+            if (data.category_suggestion) {
+                const match = categories?.find(c =>
+                    c.name.toLowerCase().includes(data.category_suggestion.toLowerCase()) ||
+                    data.category_suggestion.toLowerCase().includes(c.name.toLowerCase())
+                );
+                if (match) categoryId = match.id;
+            }
+
+            // Check if we have individual items from the receipt
+            if (data.items && data.items.length > 1) {
+                // Multiple items - create transactions for each
+                const defaultAccountId = accounts?.[0]?.id;
+                if (!defaultAccountId) {
+                    toast.error('No hay cuentas disponibles', { id: toastId });
+                    return;
+                }
+
+                let successCount = 0;
+                for (const item of data.items) {
+                    try {
+                        let itemCategoryId = categoryId;
+                        if (item.category_suggestion) {
+                            const itemMatch = categories?.find(c =>
+                                c.name.toLowerCase().includes(item.category_suggestion.toLowerCase()) ||
+                                item.category_suggestion.toLowerCase().includes(c.name.toLowerCase())
+                            );
+                            if (itemMatch) itemCategoryId = itemMatch.id;
+                        }
+
+                        await addTransaction({
+                            date: new Date(data.date),
+                            amount: item.amount,
+                            description: `${data.description} - ${item.description}`,
+                            type: 'expense',
+                            accountId: defaultAccountId,
+                            categoryId: itemCategoryId,
+                            status: 'cleared'
+                        });
+                        successCount++;
+                    } catch (err) {
+                        console.error(`Error creating transaction for item: ${item.description}`, err);
+                    }
+                }
+
+                toast.success(`¡${successCount} transacciones creadas!`, { id: toastId });
+            } else {
+                // Single item or no items - show modal for user review
+                setEditingTx({
+                    date: new Date(data.date),
+                    amount: data.amount,
+                    description: data.description,
+                    type: 'expense',
+                    categoryId: categoryId,
+                    accountId: accounts?.[0]?.id
+                });
+                setIsModalOpen(true);
+                toast.success("¡Recibo analizado!", { id: toastId });
+            }
+        } catch (error) {
+            const err = error as Error;
+            console.error(err);
+            toast.error(`Error: ${err.message || "Error desconocido"}`, {
+                id: toastId,
+                duration: 5000
+            });
+        } finally {
+            setIsScanning(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     const handleQuickCategoryChange = async (txId: string, categoryId: string) => {
         if (categoryId === '__new__') {
             setIsCategoryModalOpen(true);
@@ -222,6 +309,28 @@ export function TransactionsPage() {
                     >
                         {isEditMode ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
                         {isEditMode ? 'Cerrar Edición' : 'Edición Rápida'}
+                    </button>
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileChange}
+                    />
+                    <button
+                        onClick={handleScanClick}
+                        disabled={isScanning}
+                        className={cn(
+                            "px-5 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-lg border",
+                            isScanning
+                                ? "bg-purple-500/40 text-purple-200 border-purple-500/50 cursor-wait opacity-70"
+                                : "bg-purple-600/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30"
+                        )}
+                    >
+                        {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                        {isScanning ? 'Analizando...' : 'Escanear Recibo'}
                     </button>
 
                     <button
