@@ -89,7 +89,7 @@ export function RecurringPage() {
         setEditingId(null);
     };
 
-    const handleEdit = (item: any) => {
+    const handleEdit = (item: typeof recurring[0]) => {
         setFormData({
             description: item.description,
             amount: String(item.amount),
@@ -255,7 +255,7 @@ export function RecurringPage() {
                                     <select
                                         className="w-full p-2.5 rounded-lg border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
                                         value={formData.type}
-                                        onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                                        onChange={e => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' | 'transfer' })}
                                     >
                                         <option value="expense">Gasto</option>
                                         <option value="income">Ingreso</option>

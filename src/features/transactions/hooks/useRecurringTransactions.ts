@@ -94,7 +94,7 @@ export function useRecurringTransactions() {
         // Optimistic Update
         setRecurring(prev => prev?.map(r => r.id === id ? { ...r, ...updates } : r));
 
-        const dbUpdates: any = {};
+        const dbUpdates: Partial<Record<string, unknown>> = {};
         if (updates.description) dbUpdates.description = updates.description;
         if (updates.amount) dbUpdates.amount = updates.amount;
         if (updates.type) dbUpdates.type = updates.type;

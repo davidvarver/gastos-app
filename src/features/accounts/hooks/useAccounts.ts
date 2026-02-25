@@ -101,7 +101,7 @@ export function useAccounts() {
     };
 
     const updateAccount = async (id: string, updates: Partial<Account>) => {
-        const dbUpdates: any = {};
+        const dbUpdates: Partial<Record<string, unknown>> = {};
         if (updates.name) dbUpdates.name = updates.name;
         if (updates.type) dbUpdates.type = updates.type;
         if (updates.currency) dbUpdates.currency = updates.currency;

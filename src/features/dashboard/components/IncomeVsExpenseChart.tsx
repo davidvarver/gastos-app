@@ -98,11 +98,11 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            onClick={(state: any) => {
+                            onClick={(state: { activePayload?: Array<{ payload: Record<string, unknown> }> }) => {
                                 if (state && state.activePayload && state.activePayload.length > 0) {
-                                    const payload = state.activePayload[0].payload;
+                                    const payload = state.activePayload[0].payload as Record<string, unknown>;
                                     if (payload && payload.monthObj && onMonthClick) {
-                                        onMonthClick(new Date(payload.monthObj));
+                                        onMonthClick(new Date(payload.monthObj as string | number | Date));
                                     }
                                 }
                             }}

@@ -5,7 +5,7 @@ export interface RawTransaction {
     description: string;
     amount: number;
     cardholder?: string;
-    originalLine: any;
+    originalLine: unknown;
 }
 
 export interface ImportResult {
@@ -42,7 +42,7 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                 // Let's assume we need a toggle or auto-detect.
 
                 // Helper to find value by fuzzy header match
-                const getColumnValue = (row: any, possibleHeaders: string[]) => {
+                const getColumnValue = (row: Record<string, unknown>, possibleHeaders: string[]): unknown => {
                     const rowKeys = Object.keys(row);
                     for (const header of possibleHeaders) {
                         // 1. Exact match
@@ -61,7 +61,7 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                     return undefined;
                 };
 
-                results.data.forEach((row: any) => {
+                results.data.forEach((row: Record<string, unknown>) => {
                     try {
                         // Normalize Date
                         let dateStr = getColumnValue(row, ['Fecha', 'Date', 'FECHA']);
@@ -75,7 +75,7 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                         if (!amountStr) return;
 
                         // Clean currency symbols
-                        let amount = parseFloat(amountStr.toString().replace(/[$,]/g, ''));
+                        let amount = parseFloat(String(amountStr).replace(/[$,]/g, ''));
 
                         if (isNaN(amount)) return;
 
@@ -84,10 +84,10 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                         let cardholder = getColumnValue(row, ['Tarjetahabiente', 'Cardholder', 'Titular de la Tarjeta', 'Titular', 'Nombre']);
 
                         transactions.push({
-                            date: dateStr,
-                            description,
+                            date: String(dateStr),
+                            description: String(description),
                             amount,
-                            cardholder,
+                            cardholder: cardholder ? String(cardholder) : undefined,
                             originalLine: row
                         });
                     } catch (e) {

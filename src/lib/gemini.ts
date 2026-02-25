@@ -68,7 +68,7 @@ export async function analyzeReceipt(imageFile: File): Promise<AnalyzedReceipt> 
 
         if (err.debug_log) {
             // Format the debug log into a readable string
-            const logMsg = err.debug_log.map((l: any) => `[${l.model}]: ${l.error}`).join('\n');
+            const logMsg = err.debug_log.map((l: { model: string; error: string }) => `[${l.model}]: ${l.error}`).join('\n');
             throw new Error(`All models failed:\n${logMsg}`);
         }
 

@@ -165,7 +165,7 @@ export function DashboardPage() {
     );
 }
 
-function PiggyBank(props: any) {
+function PiggyBank(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}

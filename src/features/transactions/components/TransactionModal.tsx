@@ -149,7 +149,7 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                             <select
                                 className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none"
                                 value={formData.type}
-                                onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                                onChange={e => setFormData({ ...formData, type: e.target.value as 'income' | 'expense' | 'transfer' })}
                             >
                                 <option value="expense">Gasto</option>
                                 <option value="income">Ingreso</option>

@@ -10,7 +10,7 @@ export function useDashboard(date: Date = new Date(), accountId?: string, cardho
         net: 0,
         maaser: 0,
         jomesh: 0,
-        chartData: [] as any[],
+        chartData: [] as Array<{ name: string; value: number; color: string }>,
         isLoading: true
     });
     const { user } = useAuth();

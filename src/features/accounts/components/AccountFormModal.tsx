@@ -89,7 +89,7 @@ export function AccountFormModal({ isOpen, onClose, onSubmit, initialData }: Acc
                             <select
                                 className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none transition-all appearance-none"
                                 value={formData.type}
-                                onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                                onChange={e => setFormData({ ...formData, type: e.target.value as 'personal' | 'business' | 'investment' | 'wallet' | 'other' })}
                             >
                                 <option value="personal">Personal</option>
                                 <option value="business">Negocio</option>

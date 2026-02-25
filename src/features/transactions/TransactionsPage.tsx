@@ -655,7 +655,7 @@ export function TransactionsPage() {
                 isOpen={isAccountModalOpen}
                 onClose={() => setIsAccountModalOpen(false)}
                 onSubmit={async (acc) => {
-                    await addAccount(acc as any);
+                    await addAccount(acc);
                     setIsAccountModalOpen(false);
                 }}
             />
@@ -664,7 +664,7 @@ export function TransactionsPage() {
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
                 onSave={async (cat) => {
-                    await addCategory({ ...cat, icon: 'tag' } as any);
+                    await addCategory({ ...cat, icon: 'tag' });
                     setIsCategoryModalOpen(false);
                 }}
             />

@@ -55,9 +55,9 @@ export function ImportPage() {
                     cardholder: t.cardholder || globalCardholder
                 })));
                 setSelectedIndices(new Set());
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Import Error:", error);
-                alert(error.message || "Error al procesar el archivo.");
+                alert(error instanceof Error ? error.message : "Error al procesar el archivo.");
                 setFile(null);
                 setPreviewData([]);
             }
@@ -220,7 +220,18 @@ export function ImportPage() {
                 isMaaserable: false, // Default to false for imports to avoid unwanted auto-deductions
                 isDeductible: false
             };
-        }).filter(t => t !== null) as any[];
+        }).filter(t => t !== null) as Array<{
+            date: Date;
+            amount: number;
+            description: string;
+            type: 'income' | 'expense';
+            accountId: string;
+            categoryId?: string;
+            cardholder?: string;
+            status: 'cleared';
+            isMaaserable: boolean;
+            isDeductible: boolean;
+        }>;
 
         try {
             await addTransactions(transactionsToImport);
@@ -231,9 +242,9 @@ export function ImportPage() {
             setGlobalCategoryId('');
             setGlobalCardholder('');
             setSelectedIndices(new Set());
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Import failed:", error);
-            alert(`Error al importar: ${error.message || error}`);
+            alert(`Error al importar: ${error instanceof Error ? error.message : String(error)}`);
         }
     };
 
