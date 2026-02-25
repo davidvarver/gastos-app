@@ -1,76 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { type Account } from '@/db/db';
+import React from 'react';
+import { type Account, AccountInput } from '@/db/db';
+import { GenericFormModal } from '@/components/modals/GenericFormModal';
 
 interface AccountFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: Omit<Account, 'id'>) => void;
+    onSubmit: (data: Omit<Account, 'id'>) => Promise<void> | void;
     initialData?: Account;
 }
 
+interface AccountFormData {
+    name: string;
+    type: Account['type'];
+    initialBalance: string;
+    defaultIncomeMaaserable: boolean;
+    defaultExpenseDeductible: boolean;
+}
+
 export function AccountFormModal({ isOpen, onClose, onSubmit, initialData }: AccountFormModalProps) {
-    const [formData, setFormData] = useState({
+    const getDefaultState = (): AccountFormData => ({
         name: '',
-        type: 'personal' as Account['type'],
+        type: 'personal',
         initialBalance: '0',
         defaultIncomeMaaserable: true,
-        defaultExpenseDeductible: false
+        defaultExpenseDeductible: false,
     });
 
-    useEffect(() => {
-        if (isOpen) {
-            if (initialData) {
-                setFormData({
-                    name: initialData.name,
-                    type: initialData.type,
-                    initialBalance: initialData.initialBalance.toString(),
-                    defaultIncomeMaaserable: initialData.defaultIncomeMaaserable ?? true,
-                    defaultExpenseDeductible: initialData.defaultExpenseDeductible ?? false
-                });
-            } else {
-                // Reset for new account
-                setFormData({
-                    name: '',
-                    type: 'personal',
-                    initialBalance: '0',
-                    defaultIncomeMaaserable: true,
-                    defaultExpenseDeductible: false
-                });
-            }
-        }
-    }, [isOpen, initialData]);
-
-    if (!isOpen) return null;
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSubmit({
+    const handleFormSubmit = async (formData: AccountFormData) => {
+        await onSubmit({
             name: formData.name,
             type: formData.type,
-            currency: 'MXN', // Default for now
+            currency: 'MXN',
             initialBalance: parseFloat(formData.initialBalance) || 0,
-            currentBalance: parseFloat(formData.initialBalance) || 0, // Set current same as initial for new
-            color: '#3b82f6', // Default color
+            currentBalance: parseFloat(formData.initialBalance) || 0,
+            color: '#3b82f6',
             defaultIncomeMaaserable: formData.defaultIncomeMaaserable,
-            defaultExpenseDeductible: formData.defaultExpenseDeductible
+            defaultExpenseDeductible: formData.defaultExpenseDeductible,
         });
-        onClose();
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-[#151e32] border border-[#1e293b] rounded-2xl w-full max-w-md shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]">
-                <div className="p-6 border-b border-[#1e293b] flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white">
-                        {initialData ? 'Editar Bolsa' : 'Nueva Bolsa'}
-                    </h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+    const initialFormData = initialData
+        ? {
+              name: initialData.name,
+              type: initialData.type,
+              initialBalance: initialData.initialBalance.toString(),
+              defaultIncomeMaaserable: initialData.defaultIncomeMaaserable ?? true,
+              defaultExpenseDeductible: initialData.defaultExpenseDeductible ?? false,
+          }
+        : undefined;
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
+    return (
+        <GenericFormModal<AccountFormData>
+            isOpen={isOpen}
+            onClose={onClose}
+            onSubmit={handleFormSubmit}
+            title={initialData ? 'Editar Bolsa' : 'Nueva Bolsa'}
+            submitLabel={initialData ? 'Guardar Cambios' : 'Crear Bolsa'}
+            initialData={initialFormData}
+            getDefaultState={getDefaultState}
+        >
+            {(formData, setFormData) => (
+                <>
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-slate-400 uppercase">Nombre de la Bolsa</label>
                         <input
@@ -89,7 +79,7 @@ export function AccountFormModal({ isOpen, onClose, onSubmit, initialData }: Acc
                             <select
                                 className="w-full p-3 rounded-xl border border-slate-700 bg-[#0b1121] text-white focus:ring-2 focus:ring-[#4ade80] outline-none transition-all appearance-none"
                                 value={formData.type}
-                                onChange={e => setFormData({ ...formData, type: e.target.value as 'personal' | 'business' | 'investment' | 'wallet' | 'other' })}
+                                onChange={e => setFormData({ ...formData, type: e.target.value as Account['type'] })}
                             >
                                 <option value="personal">Personal</option>
                                 <option value="business">Negocio</option>
@@ -144,24 +134,8 @@ export function AccountFormModal({ isOpen, onClose, onSubmit, initialData }: Acc
                             </label>
                         </div>
                     </div>
-
-                    <div className="pt-4 flex gap-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors font-medium"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            className="flex-1 px-4 py-3 rounded-xl bg-[#4ade80] text-[#0b1121] hover:bg-[#4ade80]/90 transition-colors font-bold shadow-lg shadow-[#4ade80]/20"
-                        >
-                            {initialData ? 'Guardar Cambios' : 'Crear Bolsa'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                </>
+            )}
+        </GenericFormModal>
     );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { type Transaction, type Category } from '@/db/db';
+import { type Transaction, type Category, SupabaseError, TransactionForInsert, TransactionDB, AccountDB } from '@/db/db';
+import { mapTransactionsFromDB, mapCategoriesFromDB, mapSubcategoriesFromDB } from '@/lib/db-mapper';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { calculateTransactionEffects } from '../utils/transactionLogic';
 
@@ -8,69 +9,54 @@ export function useTransactions() {
     const [transactions, setTransactions] = useState<Transaction[] | undefined>(undefined);
     const [categories, setCategories] = useState<Category[] | undefined>(undefined);
     const [loading, setLoading] = useState(true);
-    const [errorState, setErrorState] = useState<any>(null);
+    const [errorState, setErrorState] = useState<Error | SupabaseError | null>(null);
     const { user } = useAuth();
 
     const fetchData = async () => {
         if (!user) return;
 
         try {
-            // Fetch Transactions
-            const { data: txData, error: txError } = await supabase
-                .from('transactions')
-                .select('*')
-                .order('date', { ascending: false });
+            // Optimized: Fetch in parallel instead of serial to reduce latency
+            // Categories should include subcategories in a single query
+            const [txResult, catResult] = await Promise.all([
+                supabase
+                    .from('transactions')
+                    .select('*')
+                    .order('date', { ascending: false }),
+                supabase
+                    .from('categories')
+                    .select('*, subcategories(*)'),
+            ]);
+
+            const { data: txData, error: txError } = txResult;
+            const { data: catData, error: catError } = catResult;
 
             if (txError) throw txError;
-
-            const mappedTransactions: Transaction[] = txData.map(t => ({
-                id: t.id,
-                date: new Date(t.date),
-                amount: Number(t.amount),
-                description: t.description,
-                type: t.type as 'income' | 'expense' | 'transfer',
-                categoryId: t.category_id,
-                subcategoryId: t.subcategory_id,
-                accountId: t.account_id,
-                toAccountId: t.to_account_id,
-                status: t.status,
-                notes: t.notes,
-                relatedTransactionId: t.related_transaction_id,
-                isSystemGenerated: t.is_system_generated,
-                isMaaserable: t.is_maaserable,
-                isDeductible: t.is_deductible,
-                cardholder: t.cardholder
-            }));
-            setTransactions(mappedTransactions);
-
-            // Fetch Categories & Subcategories
-            const { data: catData, error: catError } = await supabase.from('categories').select('*');
             if (catError) throw catError;
 
-            const { data: subData, error: subError } = await supabase.from('subcategories').select('*');
-            if (subError) throw subError;
+            const mappedTransactions: Transaction[] = mapTransactionsFromDB(txData || []);
+            setTransactions(mappedTransactions);
 
-            const mappedCategories: Category[] = catData.map(c => ({
+            // Map categories with already-joined subcategories
+            const mappedCategories: Category[] = (catData || []).map((c: any) => ({
                 id: c.id,
                 name: c.name,
-                type: c.type as 'income' | 'expense',
+                type: c.type as 'income' | 'expense' | undefined,
                 color: c.color,
                 icon: c.icon,
                 isSystem: c.is_system,
-                subcategories: subData
-                    .filter(s => s.category_id === c.id)
-                    .map(s => ({
-                        id: s.id,
-                        categoryId: s.category_id,
-                        name: s.name,
-                        type: s.type as 'income' | 'expense' | undefined
-                    }))
+                subcategories: (c.subcategories || []).map((s: any) => ({
+                    id: s.id,
+                    categoryId: s.category_id,
+                    name: s.name,
+                    type: s.type as 'income' | 'expense' | undefined,
+                })),
             }));
             setCategories(mappedCategories);
 
         } catch (error) {
             console.error('Error fetching data:', error);
-            setErrorState(error);
+            setErrorState(error as Error | SupabaseError);
         } finally {
             setLoading(false);
         }
@@ -151,13 +137,13 @@ export function useTransactions() {
         // 2. Get involved accounts to check defaults
         const accountIds = [...new Set(newTransactions.map(t => t.accountId))];
         const { data: accountsList } = await supabase.from('accounts').select('*').in('id', accountIds);
-        const accountsMap = new Map(accountsList?.map(a => [a.id, a]));
+        const accountsMap = new Map(accountsList?.map((a: AccountDB) => [a.id, a]));
 
-        const txsToInsert: any[] = [];
+        const txsToInsert: TransactionForInsert[] = [];
         const accountDeltas: Record<string, number> = {};
 
         for (const txData of newTransactions) {
-            const account = accountsMap.get(txData.accountId);
+            const account: AccountDB | undefined = accountsMap.get(txData.accountId);
 
             // Prepare context
             const accountContext = account ? {
@@ -206,24 +192,7 @@ export function useTransactions() {
         }
 
         // Optimistic Update
-        const newMappedTxs: Transaction[] = txsToInsert.map(t => ({
-            id: t.id,
-            date: new Date(t.date),
-            amount: Number(t.amount),
-            description: t.description,
-            type: t.type as 'income' | 'expense' | 'transfer',
-            categoryId: t.category_id,
-            subcategoryId: t.subcategory_id,
-            accountId: t.account_id,
-            toAccountId: t.to_account_id,
-            status: t.status,
-            notes: t.notes,
-            relatedTransactionId: t.related_transaction_id,
-            isSystemGenerated: t.is_system_generated,
-            isMaaserable: t.is_maaserable,
-            isDeductible: t.is_deductible,
-            cardholder: t.cardholder
-        }));
+        const newMappedTxs: Transaction[] = mapTransactionsFromDB(txsToInsert as TransactionDB[]);
 
         setTransactions(prev => [...newMappedTxs, ...(prev || [])].sort((a, b) => b.date.getTime() - a.date.getTime()));
     };
@@ -317,7 +286,7 @@ export function useTransactions() {
         }
 
         // 4. Update the main transaction
-        const dbUpdates: any = {};
+        const dbUpdates: Partial<TransactionDB> = {};
         if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
         if (updates.date !== undefined) dbUpdates.date = updates.date.toISOString();

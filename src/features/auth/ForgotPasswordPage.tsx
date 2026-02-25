@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SupabaseError } from '@/db/db';
 
 export function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
@@ -24,9 +25,11 @@ export function ForgotPasswordPage() {
                 type: 'success',
                 text: 'Te hemos enviado un correo con las instrucciones. Revisa tu bandeja de entrada (y spam).'
             });
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as Error | SupabaseError;
             console.error("Reset Password Error:", error);
-            setMessage({ type: 'error', text: error.message || 'Error al enviar el correo.' });
+            const message = 'message' in err ? err.message : 'Error al enviar el correo.';
+            setMessage({ type: 'error', text: message || 'Error al enviar el correo.' });
         } finally {
             setLoading(false);
         }

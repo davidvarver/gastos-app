@@ -1,7 +1,7 @@
-import { type Transaction } from '@/db/db';
+import { type Transaction, TransactionForInsert } from '@/db/db';
 
 export interface TransactionEffect {
-    txsToInsert: any[];
+    txsToInsert: TransactionForInsert[];
     accountDeltas: Record<string, number>;
 }
 
@@ -35,7 +35,7 @@ export function calculateTransactionEffects(
     maaserAccount: { id: string } | null,
     accountContext?: AccountContext
 ): TransactionEffect {
-    const txsToInsert: any[] = [];
+    const txsToInsert: TransactionForInsert[] = [];
     const accountDeltas: Record<string, number> = {};
 
     // Apply Defaults

@@ -4,11 +4,12 @@ import { Plus, Trash2, Edit2, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { getIcon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import { CategoryFormModal } from './components/CategoryFormModal';
+import { Category, CategoryInput } from '@/db/db';
 
 export function CategoriesPage() {
     const { categories, addCategory, updateCategory, deleteCategory, addSubcategory, deleteSubcategory, seedDefaultCategories, isLoading } = useCategories();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingCategory, setEditingCategory] = useState<any>(null);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
     // Auto-seed defaults if empty and not yet seeded
     useEffect(() => {
@@ -39,7 +40,7 @@ export function CategoriesPage() {
     const [newSubcatName, setNewSubcatName] = useState('');
     const [addingSubcatTo, setAddingSubcatTo] = useState<string | null>(null);
 
-    const handleOpenModal = (category?: any) => {
+    const handleOpenModal = (category?: Category) => {
         if (category) {
             setEditingCategory(category);
             setName(category.name);
@@ -199,7 +200,7 @@ export function CategoriesPage() {
                         if (editingCategory) {
                             await updateCategory(editingCategory.id, data);
                         } else {
-                            await addCategory({ ...data, icon: data.icon || 'tag' } as any);
+                            await addCategory({ ...data, icon: data.icon || 'tag' } as CategoryInput);
                         }
                     } catch (error) {
                         console.error(error);

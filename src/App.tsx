@@ -1,4 +1,3 @@
-// Force Re-deploy v2
 import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { TransactionsPage } from './features/transactions/TransactionsPage';
@@ -10,9 +9,8 @@ import { SavingsPage } from './features/savings/SavingsPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { UpdatePasswordPage } from './features/auth/UpdatePasswordPage';
-// import { RegisterPage } from './features/auth/RegisterPage'; // Not implemented yet?
 import { AuthProvider } from './features/auth/AuthProvider';
-import { ProtectedRoute } from './features/auth/ProtectedRoute'; // Assuming it's here or I need to create it
+import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { Toaster } from 'sonner';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -24,7 +22,6 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/update-password" element={<UpdatePasswordPage />} />
-          {/* <Route path="/register" element={<RegisterPage />} /> */}
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<DashboardPage />} />
@@ -42,7 +39,5 @@ function App() {
     </AuthProvider>
   );
 }
-
-
 
 export default App;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { type Category, type Subcategory } from '@/db/db';
+import { mapCategoriesFromDB, mapSubcategoriesFromDB } from '@/lib/db-mapper';
 import { useAuth } from '@/features/auth/AuthProvider';
 
 export function useCategories() {
@@ -28,22 +29,10 @@ export function useCategories() {
 
             if (subError) throw subError;
 
-            const mappedCategories: Category[] = catsData.map(c => ({
-                id: c.id,
-                name: c.name,
-                type: c.type as 'income' | 'expense' | undefined,
-                color: c.color,
-                icon: c.icon,
-                isSystem: c.is_system,
-                subcategories: subData
-                    .filter(s => s.category_id === c.id)
-                    .map(s => ({
-                        id: s.id,
-                        categoryId: s.category_id,
-                        name: s.name,
-                        type: s.type as 'income' | 'expense' | undefined
-                    }))
-            }));
+            const mappedCategories: Category[] = mapCategoriesFromDB(
+                catsData,
+                (catId) => mapSubcategoriesFromDB(subData.filter(s => s.category_id === catId))
+            );
 
             setCategories(mappedCategories);
         } catch (error) {

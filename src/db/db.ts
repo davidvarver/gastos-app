@@ -79,3 +79,115 @@ export interface RecurringTransaction {
     dayOfMonth: number; // 1-31
     active: boolean;
 }
+
+// ============= FORM INPUT TYPES (without ID fields) =============
+export type AccountInput = Omit<Account, 'id' | 'currentBalance'>;
+export type CategoryInput = Omit<Category, 'id' | 'isSystem' | 'subcategories'>;
+export type TransactionInput = Omit<Transaction, 'id'>;
+export type RecurringTransactionInput = Omit<RecurringTransaction, 'id'>;
+export type SubcategoryInput = Omit<Subcategory, 'id'>;
+
+// ============= DATABASE TYPES (what Supabase returns) =============
+export interface AccountDB {
+    id: string;
+    user_id: string;
+    name: string;
+    type: 'personal' | 'business' | 'investment' | 'wallet' | 'other';
+    currency: string;
+    initial_balance: number;
+    current_balance: number;
+    color?: string;
+    default_income_maaserable?: boolean;
+    default_expense_deductible?: boolean;
+    is_savings_goal?: boolean;
+    target_amount?: number;
+    deadline?: string;
+}
+
+export interface TransactionDB {
+    id: string;
+    user_id: string;
+    date: string;
+    amount: number;
+    description: string;
+    type: 'income' | 'expense' | 'transfer';
+    category_id?: string;
+    subcategory_id?: string;
+    account_id: string;
+    to_account_id?: string;
+    status: 'pending' | 'cleared';
+    notes?: string;
+    related_transaction_id?: string;
+    is_system_generated?: boolean;
+    is_maaserable?: boolean;
+    is_deductible?: boolean;
+    cardholder?: string;
+}
+
+export interface CategoryDB {
+    id: string;
+    user_id: string;
+    name: string;
+    type?: 'income' | 'expense';
+    color: string;
+    icon?: string;
+    is_system?: boolean;
+}
+
+export interface RecurringTransactionDB {
+    id: string;
+    user_id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense' | 'transfer';
+    category_id?: string;
+    account_id: string;
+    to_account_id?: string;
+    day_of_month: number;
+    active: boolean;
+}
+
+// ============= ERROR TYPES =============
+export interface SupabaseError {
+    message: string;
+    status?: number;
+    code?: string;
+}
+
+export interface ApiError extends Error {
+    status?: number;
+    data?: Record<string, any>;
+}
+
+// ============= CHART & DEBUG TYPES =============
+export interface ChartDataPoint {
+    name: string;
+    value: number;
+    color?: string;
+}
+
+export interface DebugLog {
+    model: string;
+    error: string;
+}
+
+// ============= TYPES FOR DATABASE INSERTS =============
+export interface TransactionForInsert {
+    id?: string;
+    user_id?: string;
+    date: string;
+    amount: number;
+    description: string;
+    type: 'income' | 'expense' | 'transfer';
+    category_id?: string | null;
+    subcategory_id?: string | null;
+    account_id: string;
+    to_account_id?: string;
+    status: 'pending' | 'cleared';
+    notes?: string;
+    is_system_generated?: boolean;
+    is_maaserable?: boolean;
+    is_deductible?: boolean;
+    cardholder?: string;
+    related_transaction_id?: string;
+}

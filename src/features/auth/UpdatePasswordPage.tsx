@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SupabaseError } from '@/db/db';
 
 export function UpdatePasswordPage() {
     const [loading, setLoading] = useState(false);
@@ -47,9 +48,11 @@ export function UpdatePasswordPage() {
                 navigate('/');
             }, 2000);
 
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as Error | SupabaseError;
             console.error("Update Password Error:", error);
-            setMessage({ type: 'error', text: error.message || 'Error al actualizar la contraseña.' });
+            const message = 'message' in err ? err.message : 'Error al actualizar la contraseña.';
+            setMessage({ type: 'error', text: message || 'Error al actualizar la contraseña.' });
         } finally {
             setLoading(false);
         }

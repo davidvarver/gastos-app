@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
+import { SupabaseError } from '@/db/db';
 
 export function LoginPage() {
     const [loading, setLoading] = useState(false);
@@ -41,9 +42,11 @@ export function LoginPage() {
                 if (error) throw error;
                 navigate('/');
             }
-        } catch (error: any) {
+        } catch (error) {
+            const err = error as Error | SupabaseError;
             console.error("Login Error Details:", error);
-            setMessage({ type: 'error', text: error.message || 'Ocurrió un error.' });
+            const message = 'message' in err ? err.message : 'Ocurrió un error.';
+            setMessage({ type: 'error', text: message || 'Ocurrió un error.' });
         } finally {
             setLoading(false);
         }

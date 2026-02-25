@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { type RecurringTransaction } from '@/db/db';
+import { mapRecurringTransactionsFromDB } from '@/lib/db-mapper';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useTransactions } from './useTransactions';
 
@@ -21,17 +22,7 @@ export function useRecurringTransactions() {
 
             if (error) throw error;
 
-            const mapped: RecurringTransaction[] = data.map(r => ({
-                id: r.id,
-                description: r.description,
-                amount: Number(r.amount),
-                type: r.type,
-                categoryId: r.category_id,
-                accountId: r.account_id,
-                toAccountId: r.to_account_id,
-                dayOfMonth: r.day_of_month,
-                active: r.active
-            }));
+            const mapped: RecurringTransaction[] = mapRecurringTransactionsFromDB(data);
 
             setRecurring(mapped);
         } catch (error) {

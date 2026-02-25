@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { type Account } from '@/db/db';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { mapAccountsFromDB } from '@/lib/db-mapper';
 
 export function useAccounts() {
     const [accounts, setAccounts] = useState<Account[] | undefined>(undefined);
@@ -19,22 +20,8 @@ export function useAccounts() {
 
             if (error) throw error;
 
-            // Map snake_case to camelCase
-            const mappedAccounts: Account[] = data.map(a => ({
-                id: a.id,
-                name: a.name,
-                type: a.type,
-                currency: a.currency,
-                initialBalance: Number(a.initial_balance),
-                currentBalance: Number(a.current_balance),
-                color: a.color,
-                defaultIncomeMaaserable: a.default_income_maaserable,
-                defaultExpenseDeductible: a.default_expense_deductible,
-                isSavingsGoal: a.is_savings_goal,
-                targetAmount: a.target_amount ? Number(a.target_amount) : undefined,
-                deadline: a.deadline ? new Date(a.deadline) : undefined
-            }));
-
+            // Map snake_case to camelCase using utility
+            const mappedAccounts = mapAccountsFromDB(data);
             setAccounts(mappedAccounts);
         } catch (error) {
             console.error('Error fetching accounts:', error);
