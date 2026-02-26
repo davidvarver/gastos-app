@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Wallet, PiggyBank } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Upload, Tag, Calendar, Wallet, PiggyBank, TrendingUp, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCheckBudgetAlerts } from '@/features/budgets/hooks/useCheckBudgetAlerts';
 
 const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -11,16 +12,44 @@ const navItems = [
     { href: '/categories', label: 'Categorías', icon: Tag },
     { href: '/accounts', label: 'Bolsas', icon: Wallet },
     { href: '/savings', label: 'Metas', icon: PiggyBank },
+    { href: '/budgets', label: 'Presupuestos', icon: Target },
+    { href: '/trends', label: 'Tendencias', icon: TrendingUp },
     { href: '/import', label: 'Importar', icon: Upload },
 ];
 
 export function AppLayout() {
     const location = useLocation();
+    const { hasAnyAlert, alertCount } = useCheckBudgetAlerts();
 
     return (
         <div className="flex flex-col h-screen bg-midnight-950 text-slate-100 font-sans overflow-hidden">
             {/* Main Content Area */}
             <main className="flex-1 overflow-auto relative pb-20 md:pb-0 z-10">
+                {/* Alert Badge */}
+                {hasAnyAlert && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="sticky top-0 z-40 mx-4 mt-4 md:mx-8 md:mt-8 p-4 bg-amber-500/20 border border-amber-500/50 rounded-xl flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">⚠️</span>
+                            <div>
+                                <p className="font-semibold text-amber-200">
+                                    {alertCount} presupuesto{alertCount !== 1 ? 's' : ''} en alerta
+                                </p>
+                                <p className="text-sm text-amber-300">Revisa tus presupuestos para evitar excedentes</p>
+                            </div>
+                        </div>
+                        <Link
+                            to="/budgets"
+                            className="px-4 py-2 bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 rounded-lg font-semibold transition-colors whitespace-nowrap ml-4"
+                        >
+                            Ver ahora
+                        </Link>
+                    </motion.div>
+                )}
+
                 <div className="p-4 md:p-8 max-w-6xl mx-auto">
                     <AnimatePresence mode="wait">
                         <motion.div
