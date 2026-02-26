@@ -80,12 +80,23 @@ export interface RecurringTransaction {
     active: boolean;
 }
 
+export interface Budget {
+    id: string;
+    categoryId: string;
+    monthYear: string; // "2025-02"
+    limitAmount: number;
+    alertThreshold: number; // Default 80
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 // ============= FORM INPUT TYPES (without ID fields) =============
 export type AccountInput = Omit<Account, 'id' | 'currentBalance'>;
 export type CategoryInput = Omit<Category, 'id' | 'isSystem' | 'subcategories'>;
 export type TransactionInput = Omit<Transaction, 'id'>;
 export type RecurringTransactionInput = Omit<RecurringTransaction, 'id'>;
 export type SubcategoryInput = Omit<Subcategory, 'id'>;
+export type BudgetInput = Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>;
 
 // ============= DATABASE TYPES (what Supabase returns) =============
 export interface AccountDB {
@@ -145,6 +156,17 @@ export interface RecurringTransactionDB {
     to_account_id?: string;
     day_of_month: number;
     active: boolean;
+}
+
+export interface BudgetDB {
+    id: string;
+    user_id: string;
+    category_id: string;
+    month_year: string;
+    limit_amount: number;
+    alert_threshold: number;
+    created_at: string;
+    updated_at: string;
 }
 
 // ============= ERROR TYPES =============
