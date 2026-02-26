@@ -7,6 +7,7 @@ import { RecurringPage } from './features/transactions/RecurringPage';
 import { ImportPage } from './features/import/ImportPage';
 import { SavingsPage } from './features/savings/SavingsPage';
 import { BudgetsPage } from './features/budgets/BudgetsPage';
+import { TrendsPage } from './features/trends/TrendsPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { UpdatePasswordPage } from './features/auth/UpdatePasswordPage';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/import" element={<ImportPage />} />
             <Route path="/savings" element={<SavingsPage />} />
             <Route path="/budgets" element={<BudgetsPage />} />
+            <Route path="/trends" element={<TrendsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
