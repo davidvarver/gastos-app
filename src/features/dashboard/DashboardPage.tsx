@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
+import { useTransactions } from '@/features/transactions/hooks/useTransactions';
+import { useCategories } from '@/features/categories/hooks/useCategories';
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChartsContainer } from './components/ChartsContainer';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { generateMonthlyReport } from '@/lib/pdf-export';
+import { toast } from 'sonner';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -28,7 +32,10 @@ export function DashboardPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
     const [filterCardholder, setFilterCardholder] = useState<string>('');
+    const [isExporting, setIsExporting] = useState(false);
     const { accounts } = useAccounts();
+    const { transactions } = useTransactions();
+    const { categories } = useCategories();
     const { income, expense, net, maaser, isLoading } = useDashboard(currentDate, selectedAccountId);
 
     const formatCurrency = (amount: number) =>
@@ -36,6 +43,60 @@ export function DashboardPage() {
 
     const handlePrevMonth = () => setCurrentDate(prev => subMonths(prev, 1));
     const handleNextMonth = () => setCurrentDate(prev => addMonths(prev, 1));
+
+    const handleExportPDF = async () => {
+        if (!transactions) {
+            toast.error('Esperando datos de transacciones...');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const monthYear = format(currentDate, 'yyyy-MM');
+            const monthDisplay = format(currentDate, 'MMMM yyyy', { locale: es });
+
+            // Filtrar transacciones del mes
+            const monthTransactions = transactions
+                .filter(tx => format(tx.date, 'yyyy-MM') === monthYear)
+                .map(tx => ({
+                    ...tx,
+                    categoryName: categories?.find(c => c.id === tx.categoryId)?.name || 'Sin categoría'
+                }))
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+            // Top categorías
+            const categoryTotals = monthTransactions
+                .filter(tx => tx.type === 'expense')
+                .reduce((acc, tx) => {
+                    const catName = tx.categoryName;
+                    acc[catName] = (acc[catName] || 0) + tx.amount;
+                    return acc;
+                }, {} as Record<string, number>);
+
+            const topCategories = Object.entries(categoryTotals)
+                .map(([name, amount]) => ({ name, amount }))
+                .sort((a, b) => b.amount - a.amount);
+
+            await generateMonthlyReport({
+                month: monthDisplay,
+                monthYear,
+                income,
+                expense,
+                net,
+                maaser,
+                transactions: monthTransactions,
+                topCategories,
+                averageDaily: expense / new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
+            });
+
+            toast.success('PDF descargado correctamente');
+        } catch (err) {
+            console.error('Error exporting PDF:', err);
+            toast.error('Error al exportar PDF');
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     return (
         <motion.div
@@ -91,6 +152,16 @@ export function DashboardPage() {
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
+
+                    {/* Export PDF Button */}
+                    <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting || isLoading}
+                        className="px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl flex items-center gap-2 transition-all shadow-lg hover:shadow-green-500/30 active:scale-95 w-full sm:w-auto justify-center sm:justify-start"
+                    >
+                        <Download className="w-4 h-4" />
+                        {isExporting ? 'Exportando...' : 'Descargar PDF'}
+                    </button>
                 </motion.div>
             </div>
 

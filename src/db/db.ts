@@ -9,11 +9,15 @@ export interface Account {
     color?: string;
     defaultIncomeMaaserable?: boolean; // If true, income in this account defaults to Maaserable
     defaultExpenseDeductible?: boolean; // If true, expenses in this account default to Deductible
+    createdByUserId: string; // NEW: Track original creator for collaborative accounts
 
     // Savings Goals Fields
     isSavingsGoal?: boolean;
     targetAmount?: number;
     deadline?: Date;
+
+    // Multi-user support
+    members?: AccountMember[]; // Loaded on-demand
 }
 
 export interface Category {
@@ -50,6 +54,8 @@ export interface Transaction {
     isMaaserable?: boolean; // For Income: Does it count for Maaser?
     isDeductible?: boolean; // For Expense: Is it deductible from Maaserable income?
     cardholder?: string; // Name of the cardholder (e.g. 'David', 'Wife')
+    createdByUserId: string; // NEW: Track who created this transaction
+    createdByUserEmail?: string; // NEW: For display in UI (loaded separately)
 }
 
 export interface ImportPattern {
@@ -90,6 +96,29 @@ export interface Budget {
     updatedAt: Date;
 }
 
+// ============= COLLABORATIVE ACCOUNTS TYPES =============
+export interface AccountMember {
+    id: string;
+    accountId: string;
+    userId: string;
+    role: 'admin' | 'editor';
+    joinedAt: Date;
+    updatedAt: Date;
+    userEmail?: string; // Display info (loaded separately)
+    userName?: string;  // Display info (loaded separately)
+}
+
+export interface AccountInvitation {
+    id: string;
+    accountId: string;
+    invitedByUserId: string;
+    token: string;
+    role: 'admin' | 'editor';
+    createdAt: Date;
+    expiresAt?: Date;
+    usedAt?: Date;
+}
+
 // ============= FORM INPUT TYPES (without ID fields) =============
 export type AccountInput = Omit<Account, 'id' | 'currentBalance'>;
 export type CategoryInput = Omit<Category, 'id' | 'isSystem' | 'subcategories'>;
@@ -102,6 +131,7 @@ export type BudgetInput = Omit<Budget, 'id' | 'createdAt' | 'updatedAt'>;
 export interface AccountDB {
     id: string;
     user_id: string;
+    created_by_user_id: string; // NEW: For multi-user support
     name: string;
     type: 'personal' | 'business' | 'investment' | 'wallet' | 'other';
     currency: string;
@@ -118,6 +148,7 @@ export interface AccountDB {
 export interface TransactionDB {
     id: string;
     user_id: string;
+    created_by_user_id: string; // NEW: For multi-user support
     date: string;
     amount: number;
     description: string;
@@ -167,6 +198,27 @@ export interface BudgetDB {
     alert_threshold: number;
     created_at: string;
     updated_at: string;
+}
+
+// ============= COLLABORATIVE ACCOUNTS DATABASE TYPES =============
+export interface AccountMemberDB {
+    id: string;
+    account_id: string;
+    user_id: string;
+    role: 'admin' | 'editor';
+    joined_at: string;
+    updated_at: string;
+}
+
+export interface AccountInvitationDB {
+    id: string;
+    account_id: string;
+    invited_by_user_id: string;
+    token: string;
+    role: 'admin' | 'editor';
+    created_at: string;
+    expires_at?: string;
+    used_at?: string;
 }
 
 // ============= ERROR TYPES =============
