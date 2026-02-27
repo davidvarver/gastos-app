@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, MoreVertical, Edit, Trash, CreditCard, Banknote } from 'lucide-react';
+import { Wallet, MoreVertical, Edit, Trash, Settings, CreditCard, Banknote } from 'lucide-react';
 import { type Account } from '@/db/db';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -8,9 +8,10 @@ interface AccountCardProps {
     account: Account;
     onEdit: (account: Account) => void;
     onDelete: (id: string) => void;
+    onManageMembers?: (account: Account) => void; // NEW: For collaborative accounts
 }
 
-export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
+export function AccountCard({ account, onEdit, onDelete, onManageMembers }: AccountCardProps) {
     const isWallet = account.type === 'wallet';
     const isBusiness = account.type === 'business';
     const isInvestment = account.type === 'investment';
@@ -43,6 +44,18 @@ export function AccountCard({ account, onEdit, onDelete }: AccountCardProps) {
                                 <Wallet className="w-6 h-6" />}
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+                    {onManageMembers && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onManageMembers(account);
+                            }}
+                            className="p-2.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl text-purple-400 hover:text-purple-300 transition-all"
+                            title="Manage members"
+                        >
+                            <Settings className="w-4 h-4" />
+                        </button>
+                    )}
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

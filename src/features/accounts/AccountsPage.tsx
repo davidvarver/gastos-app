@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Plus, Loader2, X, ArrowUpRight, ArrowDownLeft, ArrowRightLeft, Calendar, Info } from 'lucide-react';
 import { useAccounts } from './hooks/useAccounts';
+import { useAccountMembers } from './hooks/useAccountMembers'; // NEW: For managing collaborators
+import { useAccountInvitations } from './hooks/useAccountInvitations'; // NEW: For generating invites
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { AccountCard } from './components/AccountCard';
+import { AccountMembersModal } from './components/AccountMembersModal'; // NEW: For managing collaborators
 import { AccountFormModal } from './components/AccountFormModal';
 import { type Account } from '@/db/db';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +18,18 @@ export function AccountsPage() {
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+    const [managingAccount, setManagingAccount] = useState<Account | null>(null); // NEW: For managing members
+
+    // NEW: Hooks for managing collaborators
+    const memberHookResult = managingAccount ? useAccountMembers(managingAccount.id) : null;
+
+    const members = memberHookResult?.members ?? [];
+    const isCurrentUserAdmin = memberHookResult?.isCurrentUserAdmin ?? (() => false);
+    const addMember = memberHookResult?.addMember ?? (async () => {});
+    const removeMember = memberHookResult?.removeMember ?? (async () => {});
+    const updateMemberRole = memberHookResult?.updateMemberRole ?? (async () => {});
+
+    const { generateInviteLink } = useAccountInvitations();
 
     const handleEdit = (account: Account) => {
         setEditingAccount(account);
@@ -72,6 +87,7 @@ export function AccountsPage() {
                             onDelete={(id) => {
                                 if (confirm("¿Eliminar esta bolsa? Se perderá el historial local (si no está sincronizado).")) deleteAccount(id);
                             }}
+                            onManageMembers={(account) => setManagingAccount(account)}
                         />
                     </motion.div>
                 ))}
@@ -86,6 +102,21 @@ export function AccountsPage() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Account Members Modal */}
+            {managingAccount && (
+                <AccountMembersModal
+                    accountId={managingAccount.id}
+                    accountName={managingAccount.name}
+                    members={members}
+                    isCurrentUserAdmin={isCurrentUserAdmin()}
+                    onGenerateLink={generateInviteLink}
+                    onUpdateRole={updateMemberRole}
+                    onRemoveMember={removeMember}
+                    onClose={() => setManagingAccount(null)}
+                    isOpen={managingAccount !== null}
+                />
+            )}
 
             {/* Create/Edit Account Modal */}
             <AccountFormModal

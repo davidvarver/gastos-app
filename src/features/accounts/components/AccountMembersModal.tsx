@@ -10,8 +10,8 @@ interface AccountMembersModalProps {
     members: AccountMember[];
     isCurrentUserAdmin: boolean;
     onGenerateLink: (role: 'admin' | 'editor') => Promise<{ link: string; token: string }>;
-    onUpdateRole: (memberId: string, userId: string, newRole: 'admin' | 'editor') => Promise<void>;
-    onRemoveMember: (memberId: string, userId: string) => Promise<void>;
+    onUpdateRole: (userId: string, newRole: 'admin' | 'editor') => Promise<void>;
+    onRemoveMember: (userId: string) => Promise<void>;
     onClose: () => void;
     isOpen: boolean;
     isLoading?: boolean;
@@ -42,7 +42,7 @@ export function AccountMembersModal({
     const handleUpdateRole = async (memberId: string, userId: string, newRole: 'admin' | 'editor') => {
         setError(null);
         try {
-            await onUpdateRole(memberId, userId, newRole);
+            await onUpdateRole(userId, newRole);
             setEditingMemberId(null);
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to update role';
@@ -56,7 +56,7 @@ export function AccountMembersModal({
         setIsRemoving(memberId);
         setError(null);
         try {
-            await onRemoveMember(memberId, userId);
+            await onRemoveMember(userId);
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to remove member';
             setError(errorMsg);
