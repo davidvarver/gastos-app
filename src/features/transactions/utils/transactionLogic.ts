@@ -54,6 +54,7 @@ export function calculateTransactionEffects(
     const dbTx: TransactionForInsert = {
         id: txId,
         user_id: user_id,
+        created_by_user_id: user_id, // NEW: Track creator for collaborative accounts
         date: txData.date.toISOString(),
         amount: txData.amount,
         description: txData.description,
