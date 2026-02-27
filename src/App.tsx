@@ -2,6 +2,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { TransactionsPage } from './features/transactions/TransactionsPage';
 import { AccountsPage } from './features/accounts/AccountsPage';
+import { JoinAccountPage } from './features/accounts/JoinAccountPage';
 import { CategoriesPage } from './features/categories/CategoriesPage';
 import { RecurringPage } from './features/transactions/RecurringPage';
 import { ImportPage } from './features/import/ImportPage';
@@ -24,6 +25,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/update-password" element={<UpdatePasswordPage />} />
+          <Route path="/join-account/:accountId" element={<JoinAccountPage />} />
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<DashboardPage />} />
