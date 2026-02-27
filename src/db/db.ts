@@ -9,7 +9,7 @@ export interface Account {
     color?: string;
     defaultIncomeMaaserable?: boolean; // If true, income in this account defaults to Maaserable
     defaultExpenseDeductible?: boolean; // If true, expenses in this account default to Deductible
-    createdByUserId: string; // NEW: Track original creator for collaborative accounts
+    createdByUserId?: string; // NEW: Track original creator for collaborative accounts (optional for backward compat)
 
     // Savings Goals Fields
     isSavingsGoal?: boolean;
@@ -54,7 +54,7 @@ export interface Transaction {
     isMaaserable?: boolean; // For Income: Does it count for Maaser?
     isDeductible?: boolean; // For Expense: Is it deductible from Maaserable income?
     cardholder?: string; // Name of the cardholder (e.g. 'David', 'Wife')
-    createdByUserId: string; // NEW: Track who created this transaction
+    createdByUserId?: string; // NEW: Track who created this transaction (optional for backward compat)
     createdByUserEmail?: string; // NEW: For display in UI (loaded separately)
 }
 
