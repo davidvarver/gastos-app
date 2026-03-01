@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { Transaction, Category, Account } from '@/db/db';
-import { TransactionCreatorBadge } from '@/features/accounts/components/TransactionCreatorBadge';
 
 interface TransactionModalProps {
     isOpen: boolean;
@@ -98,11 +97,6 @@ export function TransactionModal({ isOpen, onClose, onSave, initialData, account
                 <h3 className="text-xl font-bold text-white">
                     {initialData?.id ? 'Editar Transacción' : 'Nueva Transacción'}
                 </h3>
-
-                {/* Creator Info Badge - Only shown when editing */}
-                {initialData?.id && initialData?.createdByUserEmail && (
-                    <TransactionCreatorBadge email={initialData.createdByUserEmail} size="sm" />
-                )}
 
                 <div className="space-y-4">
                     {error && (
