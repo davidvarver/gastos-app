@@ -94,14 +94,17 @@ export function calculateTransactionEffects(
                 txsToInsert.push({
                     id: autoTxId,
                     user_id: user_id,
+                    created_by_user_id: user_id, // Include creator tracking
                     date: txData.date.toISOString(),
                     amount: maaserAmount,
                     description: `Maaser (10%): ${txData.description}`,
                     type: 'transfer',
                     account_id: txData.accountId,
                     to_account_id: maaserAccount.id,
-                    status: 'cleared',
+                    status: 'cleared' as const,
                     is_system_generated: true,
+                    is_maaserable: false,
+                    is_deductible: false,
                     related_transaction_id: txId
                 });
                 // Update Deltas for Auto Tx
@@ -116,14 +119,17 @@ export function calculateTransactionEffects(
             txsToInsert.push({
                 id: autoTxId,
                 user_id: user_id,
+                created_by_user_id: user_id, // Include creator tracking
                 date: txData.date.toISOString(),
                 amount: txData.amount,
                 description: `Reembolso Maaser: ${txData.description}`,
                 type: 'transfer',
                 account_id: maaserAccount.id,
                 to_account_id: txData.accountId,
-                status: 'cleared',
+                status: 'cleared' as const,
                 is_system_generated: true,
+                is_maaserable: false,
+                is_deductible: false,
                 related_transaction_id: txId
             });
             // Update Deltas for Auto Tx
