@@ -21,15 +21,16 @@ export function AccountsPage() {
     const [managingAccount, setManagingAccount] = useState<Account | null>(null); // NEW: For managing members
 
     // NEW: Hooks for managing collaborators
-    const memberHookResult = managingAccount ? useAccountMembers(managingAccount.id) : null;
-
-    const members = memberHookResult?.members ?? [];
-    const isCurrentUserAdmin = memberHookResult?.isCurrentUserAdmin ?? (() => false);
-    const addMember = memberHookResult?.addMember ?? (async () => {});
-    const removeMember = memberHookResult?.removeMember ?? (async () => {});
-    const updateMemberRole = memberHookResult?.updateMemberRole ?? (async () => {});
-
+    // Always call hooks first, then decide if we should use them
+    const memberHookResult = useAccountMembers(managingAccount?.id || '');
     const { generateInviteLink } = useAccountInvitations();
+
+    // Only use member data if we actually have a managing account
+    const members = managingAccount ? memberHookResult.members : [];
+    const isCurrentUserAdmin = managingAccount ? memberHookResult.isCurrentUserAdmin : (() => false);
+    const addMember = managingAccount ? memberHookResult.addMember : (async () => {});
+    const removeMember = managingAccount ? memberHookResult.removeMember : (async () => {});
+    const updateMemberRole = managingAccount ? memberHookResult.updateMemberRole : (async () => {});
 
     const handleEdit = (account: Account) => {
         setEditingAccount(account);
