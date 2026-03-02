@@ -126,38 +126,69 @@ export function useAccounts() {
         // Optimistic Update
         setAccounts(prev => prev?.filter(a => a.id !== id));
 
-        // 1. Delete associated transactions (Incoming, Outgoing, Transfers)
-        const { error: txError } = await supabase
-            .from('transactions')
-            .delete()
-            .or(`account_id.eq.${id},to_account_id.eq.${id}`);
+        try {
+            // 1. Delete associated account members (for collaborative accounts) - must be first
+            const { error: membersError } = await supabase
+                .from('account_members')
+                .delete()
+                .eq('account_id', id);
 
-        if (txError) {
-            fetchAccounts(); // Rollback
-            throw txError;
-        }
+            if (membersError) throw membersError;
 
-        // 2. Delete associated recurring transactions
-        const { error: recError } = await supabase
-            .from('recurring_transactions')
-            .delete()
-            .or(`account_id.eq.${id},to_account_id.eq.${id}`);
+            // 2. Delete associated account invitations
+            const { error: invError } = await supabase
+                .from('account_invitations')
+                .delete()
+                .eq('account_id', id);
 
-        if (recError) {
-            fetchAccounts(); // Rollback
-            throw recError;
-        }
+            if (invError) throw invError;
 
-        // 3. Delete the account
-        const { error } = await supabase.from('accounts').delete().eq('id', id);
+            // 3. Delete associated recurring transactions
+            // Delete both where account is source and where it's destination (as to_account)
+            const { error: rec1Error } = await supabase
+                .from('recurring_transactions')
+                .delete()
+                .eq('account_id', id);
 
-        if (error) {
-            fetchAccounts(); // Rollback
+            if (rec1Error) throw rec1Error;
+
+            const { error: rec2Error } = await supabase
+                .from('recurring_transactions')
+                .delete()
+                .eq('to_account_id', id);
+
+            if (rec2Error) throw rec2Error;
+
+            // 4. Delete associated transactions (Incoming, Outgoing, Transfers)
+            // Delete both where account is source and where it's destination (as to_account)
+            const { error: tx1Error } = await supabase
+                .from('transactions')
+                .delete()
+                .eq('account_id', id);
+
+            if (tx1Error) throw tx1Error;
+
+            const { error: tx2Error } = await supabase
+                .from('transactions')
+                .delete()
+                .eq('to_account_id', id);
+
+            if (tx2Error) throw tx2Error;
+
+            // 5. Delete the account itself
+            const { error: accountError } = await supabase
+                .from('accounts')
+                .delete()
+                .eq('id', id);
+
+            if (accountError) throw accountError;
+
+            // Success - optimistic update is complete
+        } catch (error) {
+            // Rollback on any error
+            fetchAccounts();
             throw error;
         }
-
-        // Success - the optimistic update is final, don't refetch
-        // Real-time will trigger but the account is already removed from local state
     };
 
     return {
