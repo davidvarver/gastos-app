@@ -33,10 +33,22 @@ export function useAccounts() {
     useEffect(() => {
         fetchAccounts();
 
-        // Realtime subscription
+        // Realtime subscription - only listen to INSERT and UPDATE, not DELETE
+        // (DELETE is already handled optimistically in deleteAccount)
         const channel = supabase
             .channel('accounts_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts' }, () => {
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'accounts'
+            }, () => {
+                fetchAccounts();
+            })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'accounts'
+            }, () => {
                 fetchAccounts();
             })
             .subscribe();
@@ -115,13 +127,6 @@ export function useAccounts() {
         setAccounts(prev => prev?.filter(a => a.id !== id));
 
         // 1. Delete associated transactions (Incoming, Outgoing, Transfers)
-        // We need to be careful with transfers. If we delete a transfer, it disappears from both accounts?
-        // Yes, a transaction row belongs to an account.
-        // But what about `to_account_id`?
-        // If we delete an account, any transfer TO it should probably also be deleted or have `to_account_id` set to null?
-        // Usually, if you delete a bank account, you delete the history.
-        // Let's delete all transactions where this account is either source or destination.
-
         const { error: txError } = await supabase
             .from('transactions')
             .delete()
@@ -143,13 +148,16 @@ export function useAccounts() {
             throw recError;
         }
 
-        // 2. Delete the account
+        // 3. Delete the account
         const { error } = await supabase.from('accounts').delete().eq('id', id);
 
         if (error) {
             fetchAccounts(); // Rollback
             throw error;
         }
+
+        // Success - the optimistic update is final, don't refetch
+        // Real-time will trigger but the account is already removed from local state
     };
 
     return {
