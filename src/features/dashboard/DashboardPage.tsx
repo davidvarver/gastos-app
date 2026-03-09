@@ -3,7 +3,7 @@ import { useDashboard } from './hooks/useDashboard';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useCategories } from '@/features/categories/hooks/useCategories';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download, Sparkles, TrendingUp, Lightbulb, PiggyBank } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download, Sparkles, TrendingUp, Lightbulb, PiggyBank, Loader2 } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChartsContainer } from './components/ChartsContainer';
@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateMonthlyReport } from '@/lib/pdf-export';
 import { toast } from 'sonner';
+import { analyzeFinancialData } from '@/lib/ai-service';
+import { useEffect } from 'react';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -36,6 +38,8 @@ export function DashboardPage() {
     const { transactions } = useTransactions();
     const { categories } = useCategories();
     const { income, expense, net, maaser, isLoading } = useDashboard(currentDate, selectedAccountId);
+    const [aiInsights, setAiInsights] = useState<string[]>([]);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(amount);
@@ -43,15 +47,50 @@ export function DashboardPage() {
     const handlePrevMonth = () => setCurrentDate((prev: Date) => subMonths(prev, 1));
     const handleNextMonth = () => setCurrentDate((prev: Date) => addMonths(prev, 1));
 
-    // Simple AI Insights Simulation (Could be connected to Gemini later)
-    const insights = useMemo(() => {
-        if (isLoading || !income || !expense) return [];
-        const items = [];
-        if (expense > income) items.push("⚠️ Tus gastos superan tus ingresos este mes. Considera revisar tus categorías de 'Ocio'.");
-        if (net > 0) items.push(`✨ ¡Genial! Has ahorrado ${formatCurrency(net)} este mes.`);
-        if (maaser > 0) items.push(`🙏 Tienes ${formatCurrency(maaser)} listos para Maaser.`);
-        return items;
-    }, [income, expense, net, maaser, isLoading]);
+    // Real AI Insights
+    useEffect(() => {
+        const fetchInsights = async () => {
+            if (isLoading || income === 0 && expense === 0) return;
+
+            setIsAnalyzing(true);
+            try {
+                // Get top categories for the analysis
+                const monthTransactions = transactions?.filter((tx: any) =>
+                    format(tx.date, 'yyyy-MM') === format(currentDate, 'yyyy-MM')
+                ) || [];
+
+                const categoryTotals = monthTransactions
+                    .filter((tx: any) => tx.type === 'expense')
+                    .reduce((acc: Record<string, number>, tx: any) => {
+                        const cat = categories?.find((c: any) => c.id === tx.categoryId);
+                        const catName = cat?.name || 'Sin categoría';
+                        acc[catName] = (acc[catName] || 0) + tx.amount;
+                        return acc;
+                    }, {} as Record<string, number>);
+
+                const topCategories = Object.entries(categoryTotals)
+                    .map(([name, amount]) => ({ name, amount: amount as number }))
+                    .sort((a, b) => b.amount - a.amount)
+                    .slice(0, 3);
+
+                const newInsights = await analyzeFinancialData({
+                    income,
+                    expense,
+                    net,
+                    maaser,
+                    topCategories,
+                    month: format(currentDate, 'MMMM yyyy', { locale: es })
+                });
+                setAiInsights(newInsights);
+            } catch (err) {
+                console.error("AI Analysis failed:", err);
+            } finally {
+                setIsAnalyzing(false);
+            }
+        };
+
+        fetchInsights();
+    }, [income, expense, currentDate, selectedAccountId, transactions]);
 
     const handleExportPDF = async () => {
         if (!transactions) {
@@ -149,7 +188,7 @@ export function DashboardPage() {
 
             {/* AI Insights Board */}
             <AnimatePresence>
-                {insights.length > 0 && (
+                {aiInsights.length > 0 && (
                     <motion.div
                         variants={itemVariants}
                         className="liquid-glass rounded-3xl p-6 border-blue-500/20 relative overflow-hidden group"
@@ -165,12 +204,19 @@ export function DashboardPage() {
                                     <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter font-black">Beta</span>
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {insights.map((text: string, i: number) => (
-                                        <div key={i} className="flex items-center gap-3 text-slate-300 text-sm font-medium bg-white/5 p-3 rounded-2xl border border-white/5">
-                                            <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
-                                            {text}
+                                    {isAnalyzing ? (
+                                        <div className="col-span-full flex items-center gap-2 text-slate-400">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>Analizando tus finanzas...</span>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        aiInsights.map((text: string, i: number) => (
+                                            <div key={i} className="flex items-center gap-3 text-slate-300 text-sm font-medium bg-white/5 p-3 rounded-2xl border border-white/5">
+                                                <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+                                                {text}
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>

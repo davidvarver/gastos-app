@@ -34,7 +34,7 @@
       radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
     z-index: -1;
     pointer-events: none;
-    animation: bg-drift 20s ease-in-out infinite alternate;
+    animation: bg-drift 12s ease-in-out infinite alternate;
   }
 }
 

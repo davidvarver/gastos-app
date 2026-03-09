@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (transaction: any) => Promise<void>;
+    onSave: (transaction: Partial<Transaction>) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     initialData?: Partial<Transaction>;
     accounts: Account[] | undefined;
@@ -79,6 +79,17 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                 categories || []
             );
 
+            // Validation & Intelligent Mapping
+            const matchedAccount = accounts?.find(a => a.name.toLowerCase().includes(parsed.accountName?.toLowerCase() || ''));
+            const matchedCategory = categories?.find(c => c.name.toLowerCase().includes(parsed.categoryName?.toLowerCase() || ''));
+
+            if (parsed.accountName && !matchedAccount) {
+                toast.warning(`No encontré la cuenta "${parsed.accountName}". Por favor, selecciónala manualmente.`);
+            }
+            if (parsed.categoryName && !matchedCategory) {
+                toast.warning(`No encontré la categoría "${parsed.categoryName}".`);
+            }
+
             setFormData((prev: Partial<Transaction>) => ({
                 ...prev,
                 description: parsed.description || prev.description,
@@ -87,8 +98,8 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                 date: parsed.date ? new Date(parsed.date) : prev.date,
                 isMaaserable: parsed.isMaaserable !== undefined ? parsed.isMaaserable : prev.isMaaserable,
                 isDeductible: parsed.isDeductible !== undefined ? parsed.isDeductible : prev.isDeductible,
-                accountId: accounts?.find(a => a.name.toLowerCase() === parsed.accountName?.toLowerCase())?.id || prev.accountId,
-                categoryId: categories?.find(c => c.name.toLowerCase() === parsed.categoryName?.toLowerCase())?.id || prev.categoryId,
+                accountId: matchedAccount?.id || prev.accountId,
+                categoryId: matchedCategory?.id || prev.categoryId,
             }));
 
             setMagicInput('');

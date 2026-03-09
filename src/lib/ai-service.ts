@@ -58,3 +58,45 @@ export async function parseTransactionWithAI(
         throw new Error("No pude entender la transacción. ¿Podrías ser más específico?");
     }
 }
+
+export async function analyzeFinancialData(
+    data: {
+        income: number;
+        expense: number;
+        net: number;
+        maaser: number;
+        topCategories: { name: string, amount: number }[];
+        month: string;
+    }
+): Promise<string[]> {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+    Como un coach financiero experto y amable, analiza estos datos mensuales (${data.month}):
+    - Ingresos: ${data.income}
+    - Gastos: ${data.expense}
+    - Neto: ${data.net}
+    - Maaser/Donaciones: ${data.maaser}
+    - Categorías principales: ${data.topCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
+
+    Proporciona 3 consejos personalizados y accionables de una sola frase cada uno.
+    Usa un tono premium, alentador y profesional.
+    Si el balance es negativo, sé empático pero directo.
+    Si hay ahorro, sugiere cómo optimizarlo.
+    Devuelve un JSON con el formato: ["consejo1", "consejo2", "consejo3"]
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const jsonText = response.text().replace(/```json|```/g, "").trim();
+        return JSON.parse(jsonText);
+    } catch (error) {
+        console.error("Error analyzing financials:", error);
+        return [
+            "✨ Mantén un seguimiento constante para optimizar tu capital.",
+            "📊 Revisa tus categorías de mayor gasto para identificar oportunidades de ahorro.",
+            "🙏 El Maaser es una excelente práctica; asegúrate de mantener tu registro al día."
+        ];
+    }
+}
