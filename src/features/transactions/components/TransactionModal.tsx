@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+    onSave: (transaction: any) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     initialData?: Partial<Transaction>;
     accounts: Account[] | undefined;
