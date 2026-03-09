@@ -174,6 +174,15 @@ export interface CategoryDB {
     color: string;
     icon?: string;
     is_system?: boolean;
+    subcategories?: SubcategoryDB[];
+}
+
+export interface SubcategoryDB {
+    id: string;
+    user_id: string;
+    category_id: string;
+    name: string;
+    type?: 'income' | 'expense';
 }
 
 export interface RecurringTransactionDB {

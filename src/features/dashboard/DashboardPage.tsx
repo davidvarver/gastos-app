@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useCategories } from '@/features/categories/hooks/useCategories';
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download, Sparkles, TrendingUp, Lightbulb } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChartsContainer } from './components/ChartsContainer';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { generateMonthlyReport } from '@/lib/pdf-export';
 import { toast } from 'sonner';
 
@@ -41,8 +40,18 @@ export function DashboardPage() {
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(amount);
 
-    const handlePrevMonth = () => setCurrentDate(prev => subMonths(prev, 1));
-    const handleNextMonth = () => setCurrentDate(prev => addMonths(prev, 1));
+    const handlePrevMonth = () => setCurrentDate((prev: Date) => subMonths(prev, 1));
+    const handleNextMonth = () => setCurrentDate((prev: Date) => addMonths(prev, 1));
+
+    // Simple AI Insights Simulation (Could be connected to Gemini later)
+    const insights = useMemo(() => {
+        if (isLoading || !income || !expense) return [];
+        const items = [];
+        if (expense > income) items.push("⚠️ Tus gastos superan tus ingresos este mes. Considera revisar tus categorías de 'Ocio'.");
+        if (net > 0) items.push(`✨ ¡Genial! Has ahorrado ${formatCurrency(net)} este mes.`);
+        if (maaser > 0) items.push(`🙏 Tienes ${formatCurrency(maaser)} listos para Maaser.`);
+        return items;
+    }, [income, expense, net, maaser, isLoading]);
 
     const handleExportPDF = async () => {
         if (!transactions) {
@@ -57,24 +66,24 @@ export function DashboardPage() {
 
             // Filtrar transacciones del mes
             const monthTransactions = transactions
-                .filter(tx => format(tx.date, 'yyyy-MM') === monthYear)
-                .map(tx => ({
+                .filter((tx: any) => format(tx.date, 'yyyy-MM') === monthYear)
+                .map((tx: any) => ({
                     ...tx,
-                    categoryName: categories?.find(c => c.id === tx.categoryId)?.name || 'Sin categoría'
+                    categoryName: categories?.find((c: any) => c.id === tx.categoryId)?.name || 'Sin categoría'
                 }))
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
             // Top categorías
             const categoryTotals = monthTransactions
-                .filter(tx => tx.type === 'expense')
-                .reduce((acc, tx) => {
+                .filter((tx: any) => tx.type === 'expense')
+                .reduce((acc: Record<string, number>, tx: any) => {
                     const catName = tx.categoryName;
                     acc[catName] = (acc[catName] || 0) + tx.amount;
                     return acc;
                 }, {} as Record<string, number>);
 
             const topCategories = Object.entries(categoryTotals)
-                .map(([name, amount]) => ({ name, amount }))
+                .map(([name, amount]) => ({ name, amount: amount as number }))
                 .sort((a, b) => b.amount - a.amount);
 
             await generateMonthlyReport({
@@ -100,55 +109,28 @@ export function DashboardPage() {
 
     return (
         <motion.div
-            className="space-y-8"
+            className="space-y-10"
             initial="hidden"
             animate="visible"
             variants={containerVariants}
         >
             {/* Header & Controls */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                 <motion.div variants={itemVariants}>
-                    <h2 className="text-4xl font-extrabold tracking-tight premium-gradient-text">Dashboard</h2>
-                    <p className="text-slate-400 mt-1">Tu salud financiera de un vistazo.</p>
+                    <h2 className="text-5xl font-black tracking-tighter premium-gradient-text">Dashboard</h2>
+                    <p className="text-slate-400 mt-2 font-medium">Análisis inteligente de tu capital.</p>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full md:w-auto">
-                    {/* Account Filter */}
-                    <div className="relative group flex-1 sm:flex-none">
-                        <select
-                            value={selectedAccountId}
-                            onChange={(e) => setSelectedAccountId(e.target.value)}
-                            className="appearance-none bg-midnight-900/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-2xl pl-10 pr-10 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:bg-white/5 transition-all w-full md:w-auto min-w-[180px]"
-                        >
-                            <option value="all">Todas las Cuentas</option>
-                            {accounts?.map(acc => (
-                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                            ))}
-                        </select>
-                        <Wallet className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none" />
-                        <ChevronRight className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 rotate-90 pointer-events-none" />
-                    </div>
-
-                    {/* Cardholder Filter */}
-                    <div className="relative group flex-1 sm:flex-none">
-                        <input
-                            type="text"
-                            placeholder="Titular..."
-                            value={filterCardholder}
-                            onChange={(e) => setFilterCardholder(e.target.value)}
-                            className="bg-midnight-900/50 backdrop-blur-md border border-white/10 text-white text-sm rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none hover:bg-white/5 transition-all w-full sm:w-[150px]"
-                        />
-                    </div>
-
+                <motion.div variants={itemVariants} className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-4 w-full md:w-auto">
                     {/* Month Navigator */}
-                    <div className="flex items-center justify-between sm:justify-start bg-midnight-900/50 backdrop-blur-md rounded-2xl border border-white/10 p-1.5 shadow-lg w-full sm:w-auto">
-                        <button onClick={handlePrevMonth} className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95">
+                    <div className="flex items-center justify-between sm:justify-start bg-midnight-900/40 backdrop-blur-2xl rounded-2xl border border-white/5 p-1.5 shadow-xl w-full sm:w-auto">
+                        <button onClick={handlePrevMonth} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all active:scale-90">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="px-4 font-semibold text-white min-w-[120px] sm:min-w-[140px] text-center capitalize tracking-wider text-sm">
+                        <span className="px-6 font-bold text-white min-w-[140px] text-center capitalize tracking-tight">
                             {format(currentDate, 'MMMM yyyy', { locale: es })}
                         </span>
-                        <button onClick={handleNextMonth} className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95">
+                        <button onClick={handleNextMonth} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all active:scale-90">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
@@ -157,65 +139,73 @@ export function DashboardPage() {
                     <button
                         onClick={handleExportPDF}
                         disabled={isExporting || isLoading}
-                        className="px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-2xl flex items-center gap-2 transition-all shadow-lg hover:shadow-green-500/30 active:scale-95 w-full sm:w-auto justify-center sm:justify-start"
+                        className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl flex items-center gap-2 transition-all active:scale-95 w-full sm:w-auto justify-center"
                     >
                         <Download className="w-4 h-4" />
-                        {isExporting ? 'Exportando...' : 'Descargar PDF'}
+                        {isExporting ? 'Procesando...' : 'Exportar'}
                     </button>
                 </motion.div>
             </div>
 
+            {/* AI Insights Board */}
+            <AnimatePresence>
+                {insights.length > 0 && (
+                    <motion.div
+                        variants={itemVariants}
+                        className="liquid-glass rounded-3xl p-6 border-blue-500/20 relative overflow-hidden group"
+                    >
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full" />
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+                                <Sparkles className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <div className="space-y-3">
+                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                    AI Insights
+                                    <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter font-black">Beta</span>
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {insights.map((text: string, i: number) => (
+                                        <div key={i} className="flex items-center gap-3 text-slate-300 text-sm font-medium bg-white/5 p-3 rounded-2xl border border-white/5">
+                                            <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+                                            {text}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: 'Ingresos', val: income, icon: ArrowUpCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10', glow: 'group-hover:shadow-emerald-500/20' },
-                    { title: 'Gastos', val: expense, icon: ArrowDownCircle, color: 'text-rose-400', bg: 'bg-rose-500/10', glow: 'group-hover:shadow-rose-500/20' },
-                    { title: 'Balance Neto', val: net, icon: Wallet, color: net >= 0 ? "text-blue-400" : "text-rose-400", bg: 'bg-blue-500/10', glow: 'group-hover:shadow-blue-500/20' },
-                    { title: 'Maaser (10%)', val: maaser, icon: PiggyBank, color: 'text-purple-400', bg: 'bg-purple-500/10', isMaaser: true, glow: 'group-hover:shadow-purple-500/20' }
+                    { title: 'Ingresos', val: income, icon: ArrowUpCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                    { title: 'Gastos', val: expense, icon: ArrowDownCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+                    { title: 'Balance Neto', val: net, icon: Wallet, color: net >= 0 ? "text-blue-400" : "text-rose-400", bg: 'bg-blue-500/10' },
+                    { title: 'Maaser (10%)', val: maaser, icon: PiggyBank, color: 'text-purple-400', bg: 'bg-purple-500/10', isMaaser: true }
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.title}
                         variants={itemVariants}
-                        whileHover={{ y: -5, scale: 1.02 }}
-                        className={cn(
-                            "glass-card p-6 relative overflow-hidden group transition-all duration-500",
-                            stat.glow
-                        )}
+                        whileHover={{ y: -5 }}
+                        className="glass-card p-6 relative overflow-hidden group"
                     >
-                        <div className={cn("absolute top-0 right-0 w-24 h-24 rounded-bl-full -mr-12 -mt-12 transition-transform duration-700 group-hover:scale-125", stat.bg)} />
+                        <div className={cn("absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-2xl transition-all group-hover:opacity-40", stat.bg)} />
 
-                        {/* Interactive Sparkle Effect on Hover */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-
-                        <div className="flex flex-row items-center justify-between pb-4 relative z-10">
-                            <h3 className="text-sm font-semibold text-slate-400 tracking-wider uppercase">{stat.title}</h3>
-                            <stat.icon className={cn("h-5 w-5 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110", stat.color)} />
+                        <div className="flex flex-row items-center justify-between pb-6 relative z-10">
+                            <h3 className="text-xs font-black text-slate-500 tracking-widest uppercase">{stat.title}</h3>
+                            <stat.icon className={cn("h-6 w-6 transition-transform duration-500 group-hover:scale-110", stat.color)} />
                         </div>
 
                         <div className="space-y-1 relative z-10">
-                            <motion.div
-                                key={stat.val}
-                                initial={{ scale: 0.95, opacity: 0.8 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                                className={cn("text-3xl font-black tracking-tight flex items-center gap-2", stat.val < 0 ? 'text-rose-400' : 'text-white')}
-                            >
+                            <div className={cn("text-3xl font-black tracking-tighter", stat.val < 0 ? 'text-rose-400' : 'text-white')}>
                                 {isLoading ? (
-                                    <div className="h-8 w-24 bg-white/5 animate-pulse rounded-lg" />
-                                ) : (
-                                    <>
-                                        {formatCurrency(stat.val)}
-                                        {/* Animated pulse indicator when value changes */}
-                                        <motion.div
-                                            initial={{ scale: 0, opacity: 0 }}
-                                            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                                            transition={{ duration: 1 }}
-                                            className={cn("absolute inset-0 rounded-lg pointer-events-none", stat.bg)}
-                                        />
-                                    </>
-                                )}
-                            </motion.div>
-                            <p className="text-xs text-slate-500 font-bold tracking-widest uppercase opacity-80">
+                                    <div className="h-9 w-32 bg-white/5 animate-pulse rounded-xl" />
+                                ) : formatCurrency(stat.val)}
+                            </div>
+                            <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-2">
                                 {stat.isMaaser ? 'Basado en ingreso neto' : 'Total este mes'}
                             </p>
                         </div>
@@ -223,15 +213,62 @@ export function DashboardPage() {
                 ))}
             </div>
 
-            {/* Charts Section */}
-            <motion.div variants={itemVariants} className="glass-card p-6 md:p-8">
-                <ChartsContainer
-                    currentDate={currentDate}
-                    onMonthClick={setCurrentDate}
-                    accountId={selectedAccountId}
-                    cardholder={filterCardholder}
-                />
-            </motion.div>
+            {/* Main Content Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Charts Section */}
+                <motion.div variants={itemVariants} className="lg:col-span-2 glass-card p-8">
+                    <ChartsContainer
+                        currentDate={currentDate}
+                        onMonthClick={setCurrentDate}
+                        accountId={selectedAccountId}
+                        cardholder={filterCardholder}
+                    />
+                </motion.div>
+
+                {/* Filters & Utils Column */}
+                <motion.div variants={itemVariants} className="space-y-6">
+                    <div className="glass-card p-6 space-y-4">
+                        <h4 className="font-black text-white px-1">Filtros Pro</h4>
+                        <div className="space-y-4">
+                            {/* Account Filter */}
+                            <div className="relative">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 mb-2 block">Cuenta Origen</label>
+                                <select
+                                    value={selectedAccountId}
+                                    onChange={(e) => setSelectedAccountId(e.target.value)}
+                                    className="appearance-none w-full bg-midnight-950/50 border border-white/5 text-white text-sm rounded-2xl pl-10 h-12 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer hover:bg-white/5 transition-all"
+                                >
+                                    <option value="all">Todas las Cuentas</option>
+                                    {accounts?.map(acc => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                                <Wallet className="absolute left-3.5 top-[38px] w-4 h-4 text-blue-400 pointer-events-none" />
+                            </div>
+
+                            {/* Cardholder Filter */}
+                            <div className="relative">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 mb-2 block">Titular</label>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por nombre..."
+                                    value={filterCardholder}
+                                    onChange={(e) => setFilterCardholder(e.target.value)}
+                                    className="w-full bg-midnight-950/50 border border-white/5 text-white text-sm rounded-2xl px-4 h-12 focus:ring-2 focus:ring-blue-500 outline-none hover:bg-white/5 transition-all"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-6 bg-gradient-to-br from-blue-600/10 to-purple-600/10 border-blue-500/20">
+                        <div className="flex items-center gap-3 mb-4">
+                            <TrendingUp className="w-5 h-5 text-blue-400" />
+                            <h4 className="font-black text-white">Próximamente</h4>
+                        </div>
+                        <p className="text-sm text-slate-400">Predicción de gastos para el próximo mes basada en tus hábitos actuales.</p>
+                    </div>
+                </motion.div>
+            </div>
         </motion.div>
     );
 }

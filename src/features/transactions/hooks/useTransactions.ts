@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { type Transaction, type Category, SupabaseError, TransactionForInsert, TransactionDB, AccountDB } from '@/db/db';
-import { mapTransactionsFromDB, mapCategoriesFromDB, mapSubcategoriesFromDB } from '@/lib/db-mapper';
+import { type Transaction, type Category, SupabaseError, TransactionForInsert, TransactionDB, AccountDB, CategoryDB } from '@/db/db';
+import { mapTransactionsFromDB, mapCategoriesFromDB } from '@/lib/db-mapper';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { calculateTransactionEffects } from '../utils/transactionLogic';
 
@@ -37,21 +37,7 @@ export function useTransactions() {
             const mappedTransactions: Transaction[] = mapTransactionsFromDB(txData || []);
             setTransactions(mappedTransactions);
 
-            // Map categories with already-joined subcategories
-            const mappedCategories: Category[] = (catData || []).map((c: any) => ({
-                id: c.id,
-                name: c.name,
-                type: c.type as 'income' | 'expense' | undefined,
-                color: c.color,
-                icon: c.icon,
-                isSystem: c.is_system,
-                subcategories: (c.subcategories || []).map((s: any) => ({
-                    id: s.id,
-                    categoryId: s.category_id,
-                    name: s.name,
-                    type: s.type as 'income' | 'expense' | undefined,
-                })),
-            }));
+            const mappedCategories: Category[] = mapCategoriesFromDB(catData as CategoryDB[] || []);
             setCategories(mappedCategories);
 
         } catch (error) {
@@ -137,7 +123,7 @@ export function useTransactions() {
         // 2. Get involved accounts to check defaults
         const accountIds = [...new Set(newTransactions.map(t => t.accountId))];
         const { data: accountsList } = await supabase.from('accounts').select('*').in('id', accountIds);
-        const accountsMap = new Map(accountsList?.map((a: AccountDB) => [a.id, a]));
+        const accountsMap = new Map<string, AccountDB>(accountsList?.map((a: AccountDB) => [a.id, a]));
 
         const txsToInsert: TransactionForInsert[] = [];
         const accountDeltas: Record<string, number> = {};
@@ -192,9 +178,9 @@ export function useTransactions() {
         }
 
         // Optimistic Update
-        const newMappedTxs: Transaction[] = mapTransactionsFromDB(txsToInsert as TransactionDB[]);
+        const newMappedTxs: Transaction[] = mapTransactionsFromDB(txsToInsert as unknown as TransactionDB[]);
 
-        setTransactions(prev => [...newMappedTxs, ...(prev || [])].sort((a, b) => b.date.getTime() - a.date.getTime()));
+        setTransactions(prev => [...newMappedTxs, ...(prev || [])].sort((a: Transaction, b: Transaction) => b.date.getTime() - a.date.getTime()));
     };
 
     const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
@@ -209,7 +195,7 @@ export function useTransactions() {
         const accountDeltas: Record<string, number> = {};
 
         // Calculate Revert Deltas
-        for (const tx of txs) {
+        for (const tx of (txs as TransactionDB[])) {
             const amount = Number(tx.amount);
             if (tx.type === 'income') {
                 accountDeltas[tx.account_id] = (accountDeltas[tx.account_id] || 0) - amount;
@@ -232,7 +218,7 @@ export function useTransactions() {
         }
 
         // Optimistic Update
-        setTransactions(prev => prev?.filter(t => !idsToDelete.includes(t.id)));
+        setTransactions(prev => prev?.filter((t: Transaction) => !idsToDelete.includes(t.id)));
     };
 
     const deleteTransactions = async (ids: string[]) => {
@@ -267,7 +253,7 @@ export function useTransactions() {
         if (!mainOldTx) return;
 
         // 2. Revert ALL old balances (including Maaser/Refunds)
-        for (const tx of oldTxs) {
+        for (const tx of (oldTxs as TransactionDB[])) {
             const amount = Number(tx.amount);
             if (tx.type === 'income') {
                 await updateAccountBalance(tx.account_id, -amount);
@@ -319,7 +305,7 @@ export function useTransactions() {
         const accountIds = [updatedMain.account_id];
         if (updatedMain.to_account_id) accountIds.push(updatedMain.to_account_id);
         const { data: accList } = await supabase.from('accounts').select('*').in('id', accountIds);
-        const accMap = new Map(accList?.map(a => [a.id, a]));
+        const accMap = new Map<string, AccountDB>(accList?.map((a: AccountDB) => [a.id, a]));
         const account = accMap.get(updatedMain.account_id);
 
         const accountContext = account ? {
@@ -329,7 +315,7 @@ export function useTransactions() {
         } : undefined;
 
         // Map updatedMain back to TransactionInput
-        const txInput: any = {
+        const txInput = {
             ...updatedMain,
             date: new Date(updatedMain.date),
             amount: Number(updatedMain.amount),
@@ -339,7 +325,8 @@ export function useTransactions() {
             toAccountId: updatedMain.to_account_id,
             isMaaserable: updatedMain.is_maaserable,
             isDeductible: updatedMain.is_deductible,
-            isSystemGenerated: updatedMain.is_system_generated
+            isSystemGenerated: updatedMain.is_system_generated,
+            status: updatedMain.status
         };
 
         const { txsToInsert, accountDeltas } = calculateTransactionEffects(
@@ -357,7 +344,7 @@ export function useTransactions() {
         }
 
         // 7. Apply New Balances
-        for (const [accId, delta] of Object.entries(accountDeltas)) {
+        for (const [accId, delta] of Object.entries(accountDeltas as Record<string, number>)) {
             await updateAccountBalance(accId, delta);
         }
 

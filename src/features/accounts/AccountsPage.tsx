@@ -28,9 +28,9 @@ export function AccountsPage() {
     // Only use member data if we actually have a managing account
     const members = managingAccount ? memberHookResult.members : [];
     const isCurrentUserAdmin = managingAccount ? memberHookResult.isCurrentUserAdmin : (() => false);
-    const addMember = managingAccount ? memberHookResult.addMember : (async () => {});
-    const removeMember = managingAccount ? memberHookResult.removeMember : (async () => {});
-    const updateMemberRole = managingAccount ? memberHookResult.updateMemberRole : (async () => {});
+    const addMember = managingAccount ? memberHookResult.addMember : (async () => { });
+    const removeMember = managingAccount ? memberHookResult.removeMember : (async () => { });
+    const updateMemberRole = managingAccount ? memberHookResult.updateMemberRole : (async () => { });
 
     const handleEdit = (account: Account) => {
         setEditingAccount(account);

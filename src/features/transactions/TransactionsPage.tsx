@@ -754,6 +754,7 @@ export function TransactionsPage() {
                         setEditingTx(undefined);
                     }}
                     onSave={handleSave}
+                    onDelete={deleteTransaction}
                     initialData={editingTx}
                     accounts={accounts}
                     categories={categories}

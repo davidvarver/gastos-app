@@ -91,24 +91,24 @@ export function CategoriesPage() {
     if (isLoading) return <div className="p-8 text-white">Cargando categorías...</div>;
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
+        <div className="space-y-8 pb-10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-white">Categorías</h2>
-                    <p className="text-slate-400">Gestiona las categorías de tus ingresos y gastos.</p>
+                    <h2 className="text-4xl font-extrabold premium-gradient-text tracking-tight">Categorías</h2>
+                    <p className="text-slate-400 mt-1">Gestiona las categorías de tus ingresos y gastos.</p>
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="bg-[#4ade80] hover:bg-[#4ade80]/90 text-[#0b1121] font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-colors"
+                    className="bg-blue-600 text-white font-bold px-6 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/30 hover:bg-blue-500 active:scale-95"
                 >
                     <Plus className="w-5 h-5" />
                     Nueva Categoría
                 </button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {categories?.map((cat) => (
-                    <div key={cat.id} className="bg-[#151e32] border border-[#1e293b] rounded-xl p-4 flex flex-col gap-4 group hover:border-slate-600 transition-colors">
+                    <div key={cat.id} className="glass-card p-6 flex flex-col gap-6 group hover:border-white/20 transition-all duration-300">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div
@@ -165,8 +165,8 @@ export function CategoriesPage() {
                                 <div className="flex items-center gap-2 mt-2">
                                     <input
                                         autoFocus
-                                        className="bg-[#0b1121] border border-slate-700 rounded px-2 py-1 text-sm text-white w-full outline-none focus:border-[#4ade80]"
-                                        placeholder="Nombre subcategoría..."
+                                        className="bg-midnight-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white w-full outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                                        placeholder="Nueva subcategoría..."
                                         value={newSubcatName}
                                         onChange={e => setNewSubcatName(e.target.value)}
                                         onKeyDown={e => {

@@ -11,6 +11,7 @@ import {
     Subcategory,
     AccountDB,
     CategoryDB,
+    SubcategoryDB,
     TransactionDB,
     RecurringTransactionDB,
 } from '@/db/db';
@@ -75,7 +76,7 @@ export function mapCategoryFromDB(c: CategoryDB, subcategories?: Subcategory[]):
         color: c.color,
         icon: c.icon,
         isSystem: c.is_system,
-        subcategories: subcategories,
+        subcategories: subcategories || (c.subcategories ? mapSubcategoriesFromDB(c.subcategories) : undefined),
     };
 }
 
@@ -85,7 +86,7 @@ export function mapCategoriesFromDB(data: CategoryDB[], buildSubcategoryMap?: (c
 
 // ============= SUBCATEGORY MAPPERS =============
 
-export function mapSubcategoryFromDB(s: any): Subcategory {
+export function mapSubcategoryFromDB(s: SubcategoryDB): Subcategory {
     return {
         id: s.id,
         categoryId: s.category_id,
@@ -94,7 +95,7 @@ export function mapSubcategoryFromDB(s: any): Subcategory {
     };
 }
 
-export function mapSubcategoriesFromDB(data: any[]): Subcategory[] {
+export function mapSubcategoriesFromDB(data: SubcategoryDB[]): Subcategory[] {
     return data.map(mapSubcategoryFromDB);
 }
 
