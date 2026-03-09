@@ -40,6 +40,7 @@ export function DashboardPage() {
     const { income, expense, net, maaser, isLoading } = useDashboard(currentDate, selectedAccountId);
     const [aiInsights, setAiInsights] = useState<string[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState(false);
 
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'MXN' }).format(amount);
@@ -82,15 +83,23 @@ export function DashboardPage() {
                     month: format(currentDate, 'MMMM yyyy', { locale: es })
                 });
                 setAiInsights(newInsights);
+                setAnalysisError(false);
             } catch (err) {
                 console.error("AI Analysis failed:", err);
+                setAnalysisError(true);
             } finally {
                 setIsAnalyzing(false);
             }
         };
 
         fetchInsights();
-    }, [income, expense, currentDate, selectedAccountId, transactions]);
+    }, [income, expense, currentDate, selectedAccountId]);
+
+    const handleRetryAnalysis = () => {
+        setAiInsights([]);
+        setAnalysisError(false);
+        // This will trigger the useEffect because we cleared aiInsights or we can just rely on state change if needed
+    };
 
     const handleExportPDF = async () => {
         if (!transactions) {
@@ -205,9 +214,22 @@ export function DashboardPage() {
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {isAnalyzing ? (
-                                        <div className="col-span-full flex items-center gap-2 text-slate-400">
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            <span>Analizando tus finanzas...</span>
+                                        <div className="col-span-full flex items-center gap-3 text-slate-400 bg-white/5 p-4 rounded-2xl border border-white/5">
+                                            <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+                                            <span className="font-medium">Gemini está analizando tus finanzas...</span>
+                                        </div>
+                                    ) : analysisError ? (
+                                        <div className="col-span-full flex flex-col items-center gap-2 text-slate-400 bg-rose-500/5 p-4 rounded-2xl border border-rose-500/10 text-center">
+                                            <p className="text-sm font-medium">No se pudo completar el análisis en este momento.</p>
+                                            <button
+                                                onClick={() => {
+                                                    setAiInsights([]);
+                                                    // Trigger fetch
+                                                }}
+                                                className="text-xs text-blue-400 hover:text-blue-300 font-bold underline px-2 py-1"
+                                            >
+                                                Intentar de nuevo
+                                            </button>
                                         </div>
                                     ) : (
                                         aiInsights.map((text: string, i: number) => (

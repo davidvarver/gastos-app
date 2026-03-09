@@ -98,14 +98,16 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                 date: parsed.date ? new Date(parsed.date) : prev.date,
                 isMaaserable: parsed.isMaaserable !== undefined ? parsed.isMaaserable : prev.isMaaserable,
                 isDeductible: parsed.isDeductible !== undefined ? parsed.isDeductible : prev.isDeductible,
-                accountId: matchedAccount?.id || prev.accountId,
-                categoryId: matchedCategory?.id || prev.categoryId,
+                accountId: matchedAccount?.id || (parsed.accountName ? '' : prev.accountId),
+                categoryId: matchedCategory?.id || (parsed.categoryName ? '' : prev.categoryId),
             }));
 
             setMagicInput('');
             toast.success("¡Información extraída con éxito!");
         } catch (err: any) {
+            console.error("Magic Input Error:", err);
             setError(err.message || "No pude entender eso.");
+            toast.error("Error al procesar con IA. Intenta ser más específico.");
         } finally {
             setIsParsing(false);
         }
@@ -194,12 +196,30 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                                 )} />
                                 {isParsing ? (
                                     <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 animate-spin" />
+                                ) : error && magicInput ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setError(null)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 p-2 rounded-xl transition-all"
+                                        title="Limpiar error"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
                                 ) : (
                                     <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-xl transition-all active:scale-90">
                                         <Sparkles className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
+                            {error && magicInput && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-[10px] text-rose-400 font-bold mt-2 ml-1"
+                                >
+                                    ⚠️ {error}
+                                </motion.p>
+                            )}
                         </form>
                     )}
 
