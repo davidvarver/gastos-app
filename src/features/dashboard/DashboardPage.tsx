@@ -3,7 +3,7 @@ import { useDashboard } from './hooks/useDashboard';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { useCategories } from '@/features/categories/hooks/useCategories';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download, Sparkles, TrendingUp, Lightbulb } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, ChevronLeft, ChevronRight, Download, Sparkles, TrendingUp, Lightbulb, PiggyBank } from 'lucide-react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChartsContainer } from './components/ChartsContainer';
