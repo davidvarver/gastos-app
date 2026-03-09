@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface TransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (transaction: Partial<Transaction>) => Promise<void>;
+    onSave: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
     initialData?: Partial<Transaction>;
     accounts: Account[] | undefined;
@@ -131,7 +131,7 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
         }
 
         try {
-            await onSave(formData);
+            await onSave(formData as Omit<Transaction, 'id'>);
             onClose();
         } catch (err) {
             console.error("Error saving transaction:", err);
