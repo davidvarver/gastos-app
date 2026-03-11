@@ -13,7 +13,9 @@ import {
     Plus,
     User,
     Sparkles,
-    Settings
+    Settings,
+    MoreHorizontal,
+    ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,6 +44,7 @@ export function AppLayout() {
     const { accounts } = useAccounts();
     const { categories } = useCategories();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isMenuExpanded, setIsMenuExpanded] = useState(false);
 
     return (
         <div className="flex flex-col h-screen bg-midnight-950 text-slate-100 font-sans overflow-hidden selection:bg-blue-500/30">
@@ -166,7 +169,69 @@ export function AppLayout() {
                                 </Link>
                             );
                         })}
+                        
+                        {/* More Button */}
+                        <button
+                            onClick={() => setIsMenuExpanded(!isMenuExpanded)}
+                            className={cn(
+                                "flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-300 min-w-[64px] relative",
+                                isMenuExpanded ? "text-purple-400 bg-purple-500/10" : "text-slate-500 hover:text-slate-300"
+                            )}
+                        >
+                            <MoreHorizontal className="w-6 h-6" />
+                        </button>
                     </div>
+
+                    {/* Expanded Menu Overlay */}
+                    <AnimatePresence>
+                        {isMenuExpanded && (
+                            <>
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setIsMenuExpanded(false)}
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[-1]"
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                                    className="absolute bottom-24 right-0 left-0 liquid-glass rounded-3xl p-6 border-white/10 shadow-2xl z-50 overflow-hidden"
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-3xl rounded-full" />
+                                    <div className="grid grid-cols-3 gap-4 relative z-10">
+                                        {[navItems[2], navItems[5], navItems[6], navItems[7], navItems[8]].map((item) => {
+                                            const Icon = item.icon;
+                                            const isActive = location.pathname === item.href;
+                                            return (
+                                                <Link
+                                                    key={item.href}
+                                                    to={item.href}
+                                                    onClick={() => setIsMenuExpanded(false)}
+                                                    className={cn(
+                                                        "flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all active:scale-95 group",
+                                                        isActive ? "bg-blue-500/20 text-blue-400" : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    <Icon className={cn("w-6 h-6", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} />
+                                                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-70 group-hover:opacity-100">{item.label}</span>
+                                                </Link>
+                                            );
+                                        })}
+                                        {/* Action: Close */}
+                                        <button
+                                            onClick={() => setIsMenuExpanded(false)}
+                                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all active:scale-95"
+                                        >
+                                            <ChevronUp className="w-6 h-6" />
+                                            <span className="text-[10px] font-black uppercase tracking-tighter">Cerrar</span>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                 </nav>
             </div>
 
