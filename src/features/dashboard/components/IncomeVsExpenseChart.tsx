@@ -98,9 +98,10 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            onClick={(state: any) => {
-                                if (state && state.activePayload && state.activePayload.length > 0) {
-                                    const payload = state.activePayload[0].payload as Record<string, unknown>;
+                            onClick={(state) => {
+                                const s = state as any; // Recharts types for onClick are notoriously incomplete
+                                if (s && s.activePayload && s.activePayload.length > 0) {
+                                    const payload = s.activePayload[0].payload as Record<string, unknown>;
                                     if (payload && payload.monthObj && onMonthClick) {
                                         onMonthClick(new Date(payload.monthObj as string | number | Date));
                                     }

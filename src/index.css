@@ -80,6 +80,12 @@
   }
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Scrollbar refinement */
 ::-webkit-scrollbar {
   width: 5px;

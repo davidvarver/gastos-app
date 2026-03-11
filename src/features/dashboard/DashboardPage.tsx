@@ -13,6 +13,7 @@ import { generateMonthlyReport } from '@/lib/pdf-export';
 import { toast } from 'sonner';
 import { analyzeFinancialData } from '@/lib/ai-service';
 import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -214,9 +215,9 @@ export function DashboardPage() {
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {isAnalyzing ? (
-                                        <div className="col-span-full flex items-center gap-3 text-slate-400 bg-white/5 p-4 rounded-2xl border border-white/5">
-                                            <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
-                                            <span className="font-medium">Gemini está analizando tus finanzas...</span>
+                                        <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <Skeleton className="h-16 w-full" />
+                                            <Skeleton className="h-16 w-full" />
                                         </div>
                                     ) : analysisError ? (
                                         <div className="col-span-full flex flex-col items-center gap-2 text-slate-400 bg-rose-500/5 p-4 rounded-2xl border border-rose-500/10 text-center">
@@ -270,7 +271,7 @@ export function DashboardPage() {
                         <div className="space-y-1 relative z-10">
                             <div className={cn("text-3xl font-black tracking-tighter", stat.val < 0 ? 'text-rose-400' : 'text-white')}>
                                 {isLoading ? (
-                                    <div className="h-9 w-32 bg-white/5 animate-pulse rounded-xl" />
+                                    <Skeleton className="h-9 w-32" />
                                 ) : formatCurrency(stat.val)}
                             </div>
                             <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-2">
