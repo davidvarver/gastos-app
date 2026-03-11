@@ -147,7 +147,7 @@ export function AppLayout() {
                     </div>
 
                     <div className="flex items-center gap-1 justify-around flex-[2]">
-                        {[navItems[12], navItems[4]].map((item) => {
+                        {[navItems[3], navItems[4]].map((item) => {
                             const Icon = item.icon;
                             const isActive = location.pathname === item.href;
                             return (
