@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useDashboard } from './hooks/useDashboard';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
@@ -12,7 +12,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { generateMonthlyReport } from '@/lib/pdf-export';
 import { toast } from 'sonner';
 import { analyzeFinancialData } from '@/lib/ai-service';
-import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const containerVariants = {
@@ -214,32 +213,31 @@ export function DashboardPage() {
                                     <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full uppercase tracking-tighter font-black">Beta</span>
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {isAnalyzing ? (
+                                    {isAnalyzing && (
                                         <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <Skeleton className="h-16 w-full" />
                                             <Skeleton className="h-16 w-full" />
                                         </div>
-                                    ) : analysisError ? (
+                                    )}
+                                    
+                                    {!isAnalyzing && analysisError && (
                                         <div className="col-span-full flex flex-col items-center gap-2 text-slate-400 bg-rose-500/5 p-4 rounded-2xl border border-rose-500/10 text-center">
                                             <p className="text-sm font-medium">No se pudo completar el análisis en este momento.</p>
                                             <button
-                                                onClick={() => {
-                                                    setAiInsights([]);
-                                                    // Trigger fetch
-                                                }}
+                                                onClick={handleRetryAnalysis}
                                                 className="text-xs text-blue-400 hover:text-blue-300 font-bold underline px-2 py-1"
                                             >
                                                 Intentar de nuevo
                                             </button>
                                         </div>
-                                    ) : (
-                                        aiInsights.map((text: string, i: number) => (
-                                            <div key={i} className="flex items-center gap-3 text-slate-300 text-sm font-medium bg-white/5 p-3 rounded-2xl border border-white/5">
-                                                <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
-                                                {text}
-                                            </div>
-                                        ))
                                     )}
+
+                                    {!isAnalyzing && !analysisError && aiInsights.map((text: string, i: number) => (
+                                        <div key={i} className="flex items-center gap-3 text-slate-300 text-sm font-medium bg-white/5 p-3 rounded-2xl border border-white/5">
+                                            <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+                                            {text}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

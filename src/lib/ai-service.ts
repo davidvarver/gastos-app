@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 export interface ParsedTransaction {
     description: string;
@@ -18,6 +19,9 @@ export async function parseTransactionWithAI(
     accounts: { name: string, id: string }[],
     categories: { name: string, id: string }[]
 ): Promise<Partial<ParsedTransaction>> {
+    if (!genAI) {
+        throw new Error("AI Service not configured. Please add VITE_GEMINI_API_KEY.");
+    }
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
@@ -69,6 +73,13 @@ export async function analyzeFinancialData(
         month: string;
     }
 ): Promise<string[]> {
+    if (!genAI) {
+        return [
+            "✨ Mantén un seguimiento constante para optimizar tu capital.",
+            "📊 Revisa tus categorías de mayor gasto para identificar oportunidades de ahorro.",
+            "🙏 El Maaser es una excelente práctica; asegúrate de mantener tu registro al día."
+        ];
+    }
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
