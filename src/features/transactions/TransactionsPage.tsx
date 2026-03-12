@@ -32,17 +32,6 @@ export function TransactionsPage() {
     const [isScanning, setIsScanning] = useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    if (error) {
-        return (
-            <div className="p-8 text-center text-red-400">
-                <h2 className="text-xl font-bold mb-2">Error cargando transacciones</h2>
-                <pre className="bg-slate-900 p-4 rounded text-left overflow-auto text-xs">
-                    {JSON.stringify(error, null, 2)}
-                </pre>
-            </div>
-        );
-    }
-
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,6 +67,17 @@ export function TransactionsPage() {
         actions: true
     });
     const [showColumnMenu, setShowColumnMenu] = useState(false);
+
+    if (error) {
+        return (
+            <div className="p-8 text-center text-red-400">
+                <h2 className="text-xl font-bold mb-2">Error cargando transacciones</h2>
+                <pre className="bg-slate-900 p-4 rounded text-left overflow-auto text-xs">
+                    {JSON.stringify(error, null, 2)}
+                </pre>
+            </div>
+        );
+    }
 
     const filteredTransactions = transactions?.filter(tx => {
         let matches = true;
