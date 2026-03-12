@@ -15,10 +15,12 @@ export interface ParsedTransaction {
 }
 
 const AVAILABLE_MODELS = [
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-2.0-flash-exp",
-    "gemini-pro"
+    { name: "gemini-1.5-flash", version: 'v1' },
+    { name: "gemini-1.5-flash", version: 'v1beta' },
+    { name: "gemini-2.0-flash", version: 'v1' },
+    { name: "gemini-1.5-pro", version: 'v1' },
+    { name: "gemini-1.0-pro", version: 'v1' },
+    { name: "gemini-pro", version: 'v1beta' }
 ];
 
 async function callWithFallback(prompt: string, isJson: boolean = true) {
@@ -28,10 +30,11 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
 
     let lastError = null;
 
-    for (const modelName of AVAILABLE_MODELS) {
+    for (const modelInfo of AVAILABLE_MODELS) {
         try {
-            console.log(`Trying Gemini model: ${modelName}...`);
-            const model = genAI.getGenerativeModel({ model: modelName });
+            console.log(`Trying Gemini model: ${modelInfo.name} (${modelInfo.version})...`);
+            // Pass apiVersion in RequestOptions (second argument)
+            const model = genAI.getGenerativeModel({ model: modelInfo.name }, { apiVersion: modelInfo.version });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
@@ -42,9 +45,8 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
             }
             return text;
         } catch (error: any) {
-            console.warn(`Model ${modelName} failed:`, error.message || error);
+            console.warn(`Model ${modelInfo.name} (${modelInfo.version}) failed:`, error.message || error);
             lastError = error;
-            // If it's a 404 or model not found, we definitely want to try the next one
             continue;
         }
     }
