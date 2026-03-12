@@ -49,23 +49,27 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
 
     let lastError = null;
     const modelNames = [
-        "gemini-2.5-flash",
         "gemini-flash-latest",
         "gemini-2.0-flash", 
-        "gemini-2.0-flash-lite",
         "gemini-pro-latest",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash-lite",
         "gemini-1.5-flash", 
         "gemini-1.5-pro"
     ];
+    
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
     for (const name of modelNames) {
-        // TIER 1: Intento sin forzar versión (deja que el SDK decida)
-        // TIER 2: Intento con v1
-        // TIER 3: Intento con v1beta
         const versions = [undefined, 'v1', 'v1beta'];
 
         for (const version of versions) {
             try {
+                // Pequeña pausa si el anterior fue un 429 para no saturar
+                if (lastError && lastError.message?.includes("429")) {
+                    await delay(500);
+                }
+
                 console.log(`🤖 IA: Probando ${name} ${version ? `(${version})` : '(Auto)'}...`);
                 
                 const modelOptions: any = { model: name };
