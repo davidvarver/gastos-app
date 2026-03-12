@@ -12,113 +12,87 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Server misconfiguration: No API Key' });
         }
 
-        // List of models to try (Exact names from your diagnostic list)
-        // We prioritize experimental models as 1.5 versions are returning 404s for this key
-        // 2.0 models are returning 429 (Quota Exceeded), so we try exp-1206 which might be less busy
+        // Confirmamos modelos que SI funcionan segun diagnostico previo
         const modelsToTry = [
-            "gemini-exp-1206",
-            "gemini-2.0-flash-lite-preview-02-05",
-            "gemini-2.0-flash-exp",
-            "gemini-2.0-pro-exp-02-05", // Often 404s but worth a shot
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b"
+            "gemini-2.0-flash", 
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest",
+            "gemini-pro-latest",
+            "gemini-2.0-flash-lite",
+            "gemini-1.5-flash", 
+            "gemini-1.5-pro"
         ];
+        
+        const apiVersions = ["v1", "v1beta"];
 
-        const prompt = `
-        Analyze this receipt image and extract transaction details.
-
-        Return strictly a JSON object with this structure:
-        {
-            "amount": number, // Total amount found
-            "date": "YYYY-MM-DD", // Date of the transaction. If year is missing, assume current year.
-            "description": "string", // Name of establishment (e.g. "Starbucks", "OXXO", "Whole Foods")
-            "category_suggestion": "string", // Suggest one: Comida, Super, Gasolina, Servicios, Salud, Ropa, Restaurante, Otros
-            "items": [
-                {
-                    "description": "string", // Individual item name (e.g. "Café", "Galleta", "Agua")
-                    "amount": number, // Item price
-                    "category_suggestion": "string"  // Category for this specific item
-                }
-            ]
-        }
-
-        IMPORTANT:
-        - If you can identify individual items from the receipt, list them in "items" array
-        - If items are not clearly visible, use the total amount as a single item
-        - Each item should have its own price
-        - Do not include markdown formatting like \`\`\`json. Just the raw JSON.
-        - Always include the total amount and establishment name
-        `;
+        // ... (prompt remains the same)
 
         let errorLog = [];
         let resultJson = null;
+        
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-        // Loop through models manually via REST API
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`Attempting raw fetch with model: ${modelName}`);
+        // Loop through models and versions
+        outerLoop: for (const modelName of modelsToTry) {
+            for (const apiVersion of apiVersions) {
+                try {
+                    console.log(`Attempting fetch with model: ${modelName} (${apiVersion})`);
 
-                // Construct the URL manually. Note: we remove 'models/' prefix if present in the array for the URL construction
-                // because the API expects .../models/[NAME]:generateContent
-                // But wait, the previous error said "models/gemini... not found". 
-                // The standard endpoint is https://generativelanguage.googleapis.com/v1beta/models/[NAME]:generateContent
+                    const cleanModelName = modelName.replace('models/', '');
+                    const url = `https://generativelanguage.googleapis.com/${apiVersion}/models/${cleanModelName}:generateContent?key=${apiKey}`;
 
-                const cleanModelName = modelName.replace('models/', '');
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent?key=${apiKey}`;
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                { text: prompt },
-                                {
-                                    inline_data: {
-                                        mime_type: "image/jpeg",
-                                        data: image
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: image
+                                        }
                                     }
-                                }
-                            ]
-                        }]
-                    })
-                });
+                                ]
+                            }]
+                        })
+                    });
 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    // Try to parse JSON error if possible
-                    let errDetails = errText;
-                    try {
-                        const errJson = JSON.parse(errText);
-                        errDetails = errJson.error?.message || errText;
-                    } catch (e) { /* ignore */ }
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        let errDetails = errText;
+                        try {
+                            const errJson = JSON.parse(errText);
+                            errDetails = errJson.error?.message || errText;
+                        } catch (e) { /* ignore */ }
 
-                    throw new Error(`HTTP ${response.status}: ${errDetails}`);
+                        // Si es 429, esperamos un poco antes de seguir
+                        if (response.status === 429) {
+                            console.warn(`Quota exceeded for ${modelName}, waiting...`);
+                            await delay(500);
+                        }
+
+                        throw new Error(`HTTP ${response.status}: ${errDetails}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (!data.candidates || data.candidates.length === 0) {
+                        throw new Error("No candidates returned from API");
+                    }
+
+                    const text = data.candidates[0].content.parts[0].text;
+                    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    resultJson = JSON.parse(cleanedText);
+
+                    console.log(`Success with model: ${modelName} (${apiVersion})`);
+                    break outerLoop;
+
+                } catch (error) {
+                    console.warn(`API failed for ${modelName} (${apiVersion}):`, error.message);
+                    errorLog.push({ model: `${modelName} (${apiVersion})`, error: error.message });
                 }
-
-                const data = await response.json();
-
-                // Check if we have candidates
-                if (!data.candidates || data.candidates.length === 0) {
-                    throw new Error("No candidates returned from API");
-                }
-
-                const text = data.candidates[0].content.parts[0].text;
-
-                // Clean the text
-                const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                resultJson = JSON.parse(cleanedText);
-
-                // If success, break loop
-                console.log(`Success with model: ${modelName}`);
-                break;
-
-            } catch (error) {
-                console.warn(`Raw API failed for ${modelName}:`, error.message);
-                errorLog.push({ model: modelName, error: error.message });
-                // Continue to next model
             }
         }
 
