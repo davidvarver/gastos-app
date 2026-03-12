@@ -22,25 +22,23 @@ export interface ParsedTransaction {
     isDeductible?: boolean;
 }
 
-// Lista exhaustiva de modelos y versiones para burlar el 404
-const AVAILABLE_MODELS = [
-    { name: "gemini-1.5-flash", version: 'v1' },
-    { name: "gemini-1.5-flash", version: 'v1beta' },
-    { name: "gemini-1.5-pro", version: 'v1' },
-    { name: "gemini-1.5-flash-latest", version: 'v1' },
-    { name: "gemini-1.0-pro", version: 'v1' },
-    { name: "gemini-pro", version: 'v1beta' },
-    { name: "gemini-2.0-flash-exp", version: 'v1beta' }
-];
+// La lista de modelos se maneja dinámicamente en callWithFallback con tiers de API.
 
 async function listAvailableModels() {
-    if (!genAI) return;
+    const key = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!key) return;
     try {
-        const result = await (genAI as any).listModels();
-        console.log("🔎 DIAGNÓSTICO DE MODELOS: Tu API Key tiene acceso a:", 
-            result.models.map((m: any) => m.name).join(", "));
+        // Usamos fetch directo para evitar problemas de versión del SDK
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        const data = await response.json();
+        if (data.models) {
+            console.log("🔎 DIAGNÓSTICO DE MODELOS: Tu API Key tiene acceso a:", 
+                data.models.map((m: any) => m.name.replace("models/", "")).join(", "));
+        } else {
+            console.log("🔎 DIAGNÓSTICO DE MODELOS: Google no devolvió modelos. Probable error de API Key o Región:", data);
+        }
     } catch (e) {
-        console.log("🔎 DIAGNÓSTICO DE MODELOS: No se pudieron listar los modelos:", e);
+        console.log("🔎 DIAGNÓSTICO DE MODELOS: Error en la conexión de diagnóstico:", e);
     }
 }
 
@@ -50,7 +48,13 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
     }
 
     let lastError = null;
-    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+    const modelNames = [
+        "gemini-2.0-flash", 
+        "gemini-1.5-flash", 
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-pro", 
+        "gemini-1.0-pro"
+    ];
 
     for (const name of modelNames) {
         // TIER 1: Intento sin forzar versión (deja que el SDK decida)
@@ -90,10 +94,10 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
     }
 
     // Si todo falla, tiramos la sonda de diagnóstico antes de rendirnos
-    console.error("🚨 TODOS LOS MODELOS FALLARON. Iniciando sonda de diagnóstico...");
+    console.error("🚨 TODOS LOS MODELOS FALLARON (404/403). Esto suele ser un problema de Región o de la API Key.");
     await listAvailableModels();
 
-    throw lastError || new Error("Falla masiva de conexión con Gemini (404/403).");
+    throw lastError || new Error("No se pudo conectar con el cerebro de la IA. Revisa la consola para más detalles.");
 }
 
 export async function parseTransactionWithAI(
