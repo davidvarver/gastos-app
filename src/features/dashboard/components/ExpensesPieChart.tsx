@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,12 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
     const { transactions, categories } = useTransactions();
     const [timeRange, setTimeRange] = useState<1 | 3 | 6 | 12>(1);
     const [viewMode, setViewMode] = useState<'category' | 'subcategory'>('category');
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsMounted(true), 150);
+        return () => clearTimeout(timer);
+    }, []);
 
     const data = useMemo(() => {
         if (!transactions || !categories) return [];
@@ -163,13 +169,17 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="min-h-[300px] w-full flex items-center justify-center">
-                    {!data.length ? (
+                <div className="min-h-[300px] w-full flex items-center justify-center overflow-hidden">
+                    {!isMounted ? (
+                        <div className="h-[300px] w-full flex items-center justify-center text-slate-500/50 italic text-sm">
+                            Sincronizando categorías...
+                        </div>
+                    ) : !data.length ? (
                         <div className="h-full flex items-center justify-center text-slate-500">
                             No hay datos en este periodo
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+                        <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                                 <Pie
                                     data={data}

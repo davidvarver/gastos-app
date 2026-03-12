@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,12 @@ interface IncomeVsExpenseChartProps {
 export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: IncomeVsExpenseChartProps) {
     const { transactions } = useTransactions();
     const [timeRange, setTimeRange] = useState<3 | 6 | 12>(6);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setIsMounted(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     const data = useMemo(() => {
         if (!transactions) return [];
@@ -93,100 +99,106 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                 </div>
             </CardHeader>
             <CardContent className="relative z-10">
-                <div className="min-h-[300px] w-full mt-4 flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                        <BarChart
-                            data={data}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            onClick={(state) => {
-                                const s = state as any; // Recharts types for onClick are notoriously incomplete
-                                if (s && s.activePayload && s.activePayload.length > 0) {
-                                    const payload = s.activePayload[0].payload as Record<string, unknown>;
-                                    if (payload && payload.monthObj && onMonthClick) {
-                                        onMonthClick(new Date(payload.monthObj as string | number | Date));
+                <div className="min-h-[300px] w-full mt-4 flex items-center justify-center overflow-hidden">
+                    {isMounted ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart
+                                data={data}
+                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                onClick={(state) => {
+                                    const s = state as any; // Recharts types for onClick are notoriously incomplete
+                                    if (s && s.activePayload && s.activePayload.length > 0) {
+                                        const payload = s.activePayload[0].payload as Record<string, unknown>;
+                                        if (payload && payload.monthObj && onMonthClick) {
+                                            onMonthClick(new Date(payload.monthObj as string | number | Date));
+                                        }
                                     }
-                                }
-                            }}
-                            className={cn(onMonthClick ? "cursor-pointer" : "")}
-                        >
-                            <defs>
-                                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0.1} />
-                                </linearGradient>
-                                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#f87171" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#f87171" stopOpacity={0.1} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.5} />
-                            <XAxis
-                                dataKey="name"
-                                stroke="#475569"
-                                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                                axisLine={false}
-                                tickLine={false}
-                                dy={10}
-                            />
-                            <YAxis
-                                stroke="#475569"
-                                tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                                tickFormatter={(value) => `$${value / 1000}k`}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <Tooltip
-                                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
-                                contentStyle={{
-                                    backgroundColor: '#0b1121cc',
-                                    backdropFilter: 'blur(12px)',
-                                    borderColor: 'rgba(255,255,255,0.1)',
-                                    borderRadius: '16px',
-                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-                                    color: '#fff',
-                                    padding: '12px'
                                 }}
-                                formatter={(value: number, name: string) => {
-                                    const formatted = `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(value)}`;
-                                    if (name === "projection") return [formatted, "Estimado fin de mes"];
-                                    return [formatted, name.charAt(0).toUpperCase() + name.slice(1)];
-                                }}
-                                labelFormatter={(label, payload) => {
-                                    if (payload && payload[0] && payload[0].payload) {
-                                        return payload[0].payload.fullName;
-                                    }
-                                    return label;
-                                }}
-                            />
-                            <Legend
-                                verticalAlign="top"
-                                align="right"
-                                iconType="circle"
-                                wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}
-                            />
-                            <Bar dataKey="income" name="Ingresos" fill="url(#incomeGradient)" radius={[6, 6, 0, 0]} barSize={20} />
-                            <Bar dataKey="expense" name="Gastos" fill="url(#expenseGradient)" radius={[6, 6, 0, 0]} barSize={20} />
+                                className={cn(onMonthClick ? "cursor-pointer" : "")}
+                            >
+                                <defs>
+                                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#4ade80" stopOpacity={0.1} />
+                                    </linearGradient>
+                                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f87171" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#f87171" stopOpacity={0.1} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} opacity={0.5} />
+                                <XAxis
+                                    dataKey="name"
+                                    stroke="#475569"
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    stroke="#475569"
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    tickFormatter={(value) => `$${value / 1000}k`}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 8 }}
+                                    contentStyle={{
+                                        backgroundColor: '#0b1121cc',
+                                        backdropFilter: 'blur(12px)',
+                                        borderColor: 'rgba(255,255,255,0.1)',
+                                        borderRadius: '16px',
+                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                                        color: '#fff',
+                                        padding: '12px'
+                                    }}
+                                    formatter={(value: number, name: string) => {
+                                        const formatted = `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 0 }).format(value)}`;
+                                        if (name === "projection") return [formatted, "Estimado fin de mes"];
+                                        return [formatted, name.charAt(0).toUpperCase() + name.slice(1)];
+                                    }}
+                                    labelFormatter={(label, payload) => {
+                                        if (payload && payload[0] && payload[0].payload) {
+                                            return payload[0].payload.fullName;
+                                        }
+                                        return label;
+                                    }}
+                                />
+                                <Legend
+                                    verticalAlign="top"
+                                    align="right"
+                                    iconType="circle"
+                                    wrapperStyle={{ paddingBottom: '20px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                />
+                                <Bar dataKey="income" name="Ingresos" fill="url(#incomeGradient)" radius={[6, 6, 0, 0]} barSize={20} />
+                                <Bar dataKey="expense" name="Gastos" fill="url(#expenseGradient)" radius={[6, 6, 0, 0]} barSize={20} />
 
-                            {/* Projection Bar (Dashed or Opacity) */}
-                            <Bar dataKey="projection" name="Proyección" fill="#f87171" radius={[6, 6, 0, 0]} barSize={8} opacity={0.3} />
+                                {/* Projection Bar (Dashed or Opacity) */}
+                                <Bar dataKey="projection" name="Proyección" fill="#f87171" radius={[6, 6, 0, 0]} barSize={8} opacity={0.3} />
 
-                            {/* Benchmark Reference Line */}
-                            <svg>
-                                {data.length > 0 && (
-                                    <line
-                                        x1="0"
-                                        y1={data[0].benchmark}
-                                        x2="100%"
-                                        y2={data[0].benchmark}
-                                        stroke="#facc15"
-                                        strokeDasharray="5 5"
-                                        strokeWidth={1}
-                                        opacity={0.5}
-                                    />
-                                )}
-                            </svg>
-                        </BarChart>
-                    </ResponsiveContainer>
+                                {/* Benchmark Reference Line */}
+                                <svg>
+                                    {data.length > 0 && (
+                                        <line
+                                            x1="0"
+                                            y1={data[0].benchmark}
+                                            x2="100%"
+                                            y2={data[0].benchmark}
+                                            stroke="#facc15"
+                                            strokeDasharray="5 5"
+                                            strokeWidth={1}
+                                            opacity={0.5}
+                                        />
+                                    )}
+                                </svg>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-[300px] w-full flex items-center justify-center text-slate-500/50 italic text-sm">
+                            Sincronizando dimensiones...
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
