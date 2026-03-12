@@ -50,10 +50,11 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
     let lastError = null;
     const modelNames = [
         "gemini-2.0-flash", 
+        "gemini-flash-latest",
+        "gemini-2.0-flash-lite",
+        "gemini-pro-latest",
         "gemini-1.5-flash", 
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-pro", 
-        "gemini-1.0-pro"
+        "gemini-1.5-pro"
     ];
 
     for (const name of modelNames) {
