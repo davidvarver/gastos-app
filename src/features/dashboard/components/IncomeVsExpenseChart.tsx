@@ -93,8 +93,8 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                 </div>
             </CardHeader>
             <CardContent className="relative z-10">
-                <div className="h-[300px] w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
+                <div className="min-h-[300px] w-full mt-4 flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                         <BarChart
                             data={data}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}

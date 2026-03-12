@@ -1,6 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+// DIAGNÓSTICO: Log simplificado para verificar presencia de llave (sin exponerla toda)
+if (!API_KEY) {
+    console.error("❌ AI_SERVICE: VITE_GEMINI_API_KEY no detectada en environment.");
+} else {
+    console.log(`✅ AI_SERVICE: Key detectada (Inicia con: ${API_KEY.substring(0, 4)}..., Longitud: ${API_KEY.length})`);
+}
+
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
 export interface ParsedTransaction {
@@ -14,27 +22,27 @@ export interface ParsedTransaction {
     isDeductible?: boolean;
 }
 
+// Lista exhaustiva de modelos y versiones para burlar el 404
 const AVAILABLE_MODELS = [
-    { name: "gemini-1.5-flash", version: 'v1' },
-    { name: "gemini-1.5-flash", version: 'v1beta' },
-    { name: "gemini-2.0-flash", version: 'v1' },
-    { name: "gemini-1.5-pro", version: 'v1' },
-    { name: "gemini-1.0-pro", version: 'v1' },
-    { name: "gemini-pro", version: 'v1beta' }
+    { name: "gemini-1.5-flash" },
+    { name: "gemini-1.5-flash-latest" },
+    { name: "gemini-1.0-pro" },
+    { name: "gemini-pro" },
+    { name: "gemini-2.0-flash-exp" }
 ];
 
 async function callWithFallback(prompt: string, isJson: boolean = true) {
     if (!genAI) {
-        throw new Error("AI Service not configured. Please add VITE_GEMINI_API_KEY.");
+        throw new Error("AI Service no configurado. Verifica VITE_GEMINI_API_KEY.");
     }
 
     let lastError = null;
 
+    // Probar primero con la versión por defecto del SDK (v1)
     for (const modelInfo of AVAILABLE_MODELS) {
         try {
-            console.log(`Trying Gemini model: ${modelInfo.name} (${modelInfo.version})...`);
-            // Pass apiVersion in RequestOptions (second argument)
-            const model = genAI.getGenerativeModel({ model: modelInfo.name }, { apiVersion: modelInfo.version });
+            console.log(`🤖 IA: Probando ${modelInfo.name}...`);
+            const model = genAI.getGenerativeModel({ model: modelInfo.name });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
@@ -45,13 +53,22 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
             }
             return text;
         } catch (error: any) {
-            console.warn(`Model ${modelInfo.name} (${modelInfo.version}) failed:`, error.message || error);
+            const errorMsg = error.message || String(error);
+            
+            // ERROR CRÍTICO: Llave filtrada
+            if (errorMsg.includes("leaked")) {
+                console.error("❌ ERROR CRÍTICO: Tu API Key de Gemini ha sido filtrada y bloqueada por Google. Por seguridad, ve a Google AI Studio, genera una llave nueva y actualiza VITE_GEMINI_API_KEY en Vercel.");
+                throw new Error("API Key bloqueada por seguridad (leaked). Requiere acción manual.");
+            }
+
+            console.warn(`⚠️ IA: Modelo ${modelInfo.name} falló:`, errorMsg);
             lastError = error;
+            // Si el error es 404, intentamos el siguiente de la lista
             continue;
         }
     }
 
-    throw lastError || new Error("All Gemini models failed.");
+    throw lastError || new Error("Todos los modelos de Gemini fallaron (404/403).");
 }
 
 export async function parseTransactionWithAI(

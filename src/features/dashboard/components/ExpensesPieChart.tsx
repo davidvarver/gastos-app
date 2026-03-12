@@ -163,13 +163,13 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="h-[300px] w-full">
+                <div className="min-h-[300px] w-full flex items-center justify-center">
                     {!data.length ? (
                         <div className="h-full flex items-center justify-center text-slate-500">
                             No hay datos en este periodo
                         </div>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                             <PieChart>
                                 <Pie
                                     data={data}

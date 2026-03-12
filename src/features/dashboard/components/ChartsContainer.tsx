@@ -10,9 +10,13 @@ interface ChartsContainerProps {
 
 export function ChartsContainer({ currentDate, onMonthClick, accountId, cardholder }: ChartsContainerProps) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            <IncomeVsExpenseChart onMonthClick={onMonthClick} accountId={accountId} cardholder={cardholder} />
-            <ExpensesPieChart currentDate={currentDate} accountId={accountId} cardholder={cardholder} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 min-h-[400px]">
+            <div className="min-h-[350px] flex flex-col">
+                <IncomeVsExpenseChart onMonthClick={onMonthClick} accountId={accountId} cardholder={cardholder} />
+            </div>
+            <div className="min-h-[350px] flex flex-col">
+                <ExpensesPieChart currentDate={currentDate} accountId={accountId} cardholder={cardholder} />
+            </div>
         </div>
     );
 }
