@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     try {
         const { image } = req.body;
 
-        const apiKey = process.env.GEMINI_API_KEY?.trim();
+        const apiKey = (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY)?.trim();
         if (!apiKey) {
             console.error("Missing GEMINI_API_KEY environment variable");
             return res.status(500).json({ error: 'Server misconfiguration: No API Key' });
