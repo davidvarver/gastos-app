@@ -283,7 +283,7 @@ export function DashboardPage() {
             {/* Main Content Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Charts Section */}
-                <motion.div variants={itemVariants} className="lg:col-span-2 glass-card p-8">
+                <motion.div variants={itemVariants} className="lg:col-span-2 glass-card p-8 min-h-[500px] flex flex-col">
                     <ChartsContainer
                         currentDate={currentDate}
                         onMonthClick={setCurrentDate}

@@ -14,16 +14,49 @@ export interface ParsedTransaction {
     isDeductible?: boolean;
 }
 
+const AVAILABLE_MODELS = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash-exp",
+    "gemini-pro"
+];
+
+async function callWithFallback(prompt: string, isJson: boolean = true) {
+    if (!genAI) {
+        throw new Error("AI Service not configured. Please add VITE_GEMINI_API_KEY.");
+    }
+
+    let lastError = null;
+
+    for (const modelName of AVAILABLE_MODELS) {
+        try {
+            console.log(`Trying Gemini model: ${modelName}...`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+            
+            if (isJson) {
+                const jsonText = text.replace(/```json|```/g, "").trim();
+                return JSON.parse(jsonText);
+            }
+            return text;
+        } catch (error: any) {
+            console.warn(`Model ${modelName} failed:`, error.message || error);
+            lastError = error;
+            // If it's a 404 or model not found, we definitely want to try the next one
+            continue;
+        }
+    }
+
+    throw lastError || new Error("All Gemini models failed.");
+}
+
 export async function parseTransactionWithAI(
     text: string,
     accounts: { name: string, id: string }[],
     categories: { name: string, id: string }[]
 ): Promise<Partial<ParsedTransaction>> {
-    if (!genAI) {
-        throw new Error("AI Service not configured. Please add VITE_GEMINI_API_KEY.");
-    }
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `
     Eres un asistente financiero experto. Tu tarea es extraer información de una transacción a partir de un texto en lenguaje natural.
 
@@ -53,10 +86,7 @@ export async function parseTransactionWithAI(
   `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const jsonText = response.text().replace(/```json|```/g, "").trim();
-        return JSON.parse(jsonText);
+        return await callWithFallback(prompt);
     } catch (error) {
         console.error("Error parsing with AI:", error);
         throw new Error("No pude entender la transacción. ¿Podrías ser más específico?");
@@ -80,7 +110,6 @@ export async function analyzeFinancialData(
             "🙏 El Maaser es una excelente práctica; asegúrate de mantener tu registro al día."
         ];
     }
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
     Como un coach financiero experto y amable, analiza estos datos mensuales (${data.month}):
@@ -98,10 +127,7 @@ export async function analyzeFinancialData(
     `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const jsonText = response.text().replace(/```json|```/g, "").trim();
-        return JSON.parse(jsonText);
+        return await callWithFallback(prompt);
     } catch (error) {
         console.error("Error analyzing financials:", error);
         return [
