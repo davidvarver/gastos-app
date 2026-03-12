@@ -24,11 +24,13 @@ export interface ParsedTransaction {
 
 // Lista exhaustiva de modelos y versiones para burlar el 404
 const AVAILABLE_MODELS = [
-    { name: "gemini-1.5-flash" },
-    { name: "gemini-1.5-flash-latest" },
-    { name: "gemini-1.0-pro" },
-    { name: "gemini-pro" },
-    { name: "gemini-2.0-flash-exp" }
+    { name: "gemini-1.5-flash", version: 'v1' },
+    { name: "gemini-1.5-flash", version: 'v1beta' },
+    { name: "gemini-1.5-pro", version: 'v1' },
+    { name: "gemini-1.5-flash-latest", version: 'v1' },
+    { name: "gemini-1.0-pro", version: 'v1' },
+    { name: "gemini-pro", version: 'v1beta' },
+    { name: "gemini-2.0-flash-exp", version: 'v1beta' }
 ];
 
 async function callWithFallback(prompt: string, isJson: boolean = true) {
@@ -38,11 +40,15 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
 
     let lastError = null;
 
-    // Probar primero con la versión por defecto del SDK (v1)
     for (const modelInfo of AVAILABLE_MODELS) {
         try {
-            console.log(`🤖 IA: Probando ${modelInfo.name}...`);
-            const model = genAI.getGenerativeModel({ model: modelInfo.name });
+            console.log(`🤖 IA: Probando ${modelInfo.name} (${modelInfo.version})...`);
+            // Forzar la versión de la API quirúrgicamente
+            const model = genAI.getGenerativeModel(
+                { model: modelInfo.name }, 
+                { apiVersion: modelInfo.version }
+            );
+            
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
@@ -61,9 +67,8 @@ async function callWithFallback(prompt: string, isJson: boolean = true) {
                 throw new Error("API Key bloqueada por seguridad (leaked). Requiere acción manual.");
             }
 
-            console.warn(`⚠️ IA: Modelo ${modelInfo.name} falló:`, errorMsg);
+            console.warn(`⚠️ IA: Modelo ${modelInfo.name} (${modelInfo.version}) falló:`, errorMsg);
             lastError = error;
-            // Si el error es 404, intentamos el siguiente de la lista
             continue;
         }
     }

@@ -16,11 +16,26 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
     const { transactions } = useTransactions();
     const [timeRange, setTimeRange] = useState<3 | 6 | 12>(6);
     const [isMounted, setIsMounted] = useState(false);
+    const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+    const [hasSize, setHasSize] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsMounted(true), 100);
-        return () => clearTimeout(timer);
-    }, []);
+        setIsMounted(true);
+        if (containerRef && containerRef.clientWidth > 0) {
+            setHasSize(true);
+        }
+    }, [containerRef]);
+
+    // Re-check size on window resize
+    useEffect(() => {
+        const handleResize = () => {
+            if (containerRef && containerRef.clientWidth > 0) {
+                setHasSize(true);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [containerRef]);
 
     const data = useMemo(() => {
         if (!transactions) return [];
@@ -99,8 +114,11 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                 </div>
             </CardHeader>
             <CardContent className="relative z-10">
-                <div className="min-h-[300px] w-full mt-4 flex items-center justify-center overflow-hidden">
-                    {isMounted ? (
+                <div 
+                    ref={setContainerRef}
+                    className="min-h-[300px] w-full mt-4 flex items-center justify-center overflow-hidden"
+                >
+                    {isMounted && hasSize ? (
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart
                                 data={data}

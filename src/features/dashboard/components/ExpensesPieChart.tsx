@@ -18,11 +18,25 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
     const [timeRange, setTimeRange] = useState<1 | 3 | 6 | 12>(1);
     const [viewMode, setViewMode] = useState<'category' | 'subcategory'>('category');
     const [isMounted, setIsMounted] = useState(false);
+    const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+    const [hasSize, setHasSize] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsMounted(true), 150);
-        return () => clearTimeout(timer);
-    }, []);
+        setIsMounted(true);
+        if (containerRef && containerRef.clientWidth > 0) {
+            setHasSize(true);
+        }
+    }, [containerRef]);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (containerRef && containerRef.clientWidth > 0) {
+                setHasSize(true);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [containerRef]);
 
     const data = useMemo(() => {
         if (!transactions || !categories) return [];
@@ -169,10 +183,13 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="min-h-[300px] w-full flex items-center justify-center overflow-hidden">
-                    {!isMounted ? (
+                <div 
+                    ref={setContainerRef}
+                    className="min-h-[300px] w-full flex items-center justify-center overflow-hidden"
+                >
+                    {!isMounted || !hasSize ? (
                         <div className="h-[300px] w-full flex items-center justify-center text-slate-500/50 italic text-sm">
-                            Sincronizando categorías...
+                            Sincronizando...
                         </div>
                     ) : !data.length ? (
                         <div className="h-full flex items-center justify-center text-slate-500">
