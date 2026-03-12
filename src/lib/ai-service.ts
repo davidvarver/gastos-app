@@ -33,47 +33,67 @@ const AVAILABLE_MODELS = [
     { name: "gemini-2.0-flash-exp", version: 'v1beta' }
 ];
 
+async function listAvailableModels() {
+    if (!genAI) return;
+    try {
+        const result = await (genAI as any).listModels();
+        console.log("🔎 DIAGNÓSTICO DE MODELOS: Tu API Key tiene acceso a:", 
+            result.models.map((m: any) => m.name).join(", "));
+    } catch (e) {
+        console.log("🔎 DIAGNÓSTICO DE MODELOS: No se pudieron listar los modelos:", e);
+    }
+}
+
 async function callWithFallback(prompt: string, isJson: boolean = true) {
     if (!genAI) {
         throw new Error("AI Service no configurado. Verifica VITE_GEMINI_API_KEY.");
     }
 
     let lastError = null;
+    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
 
-    for (const modelInfo of AVAILABLE_MODELS) {
-        try {
-            console.log(`🤖 IA: Probando ${modelInfo.name} (${modelInfo.version})...`);
-            // Forzar la versión de la API quirúrgicamente
-            const model = genAI.getGenerativeModel(
-                { model: modelInfo.name }, 
-                { apiVersion: modelInfo.version }
-            );
-            
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
-            
-            if (isJson) {
-                const jsonText = text.replace(/```json|```/g, "").trim();
-                return JSON.parse(jsonText);
-            }
-            return text;
-        } catch (error: any) {
-            const errorMsg = error.message || String(error);
-            
-            // ERROR CRÍTICO: Llave filtrada
-            if (errorMsg.includes("leaked")) {
-                console.error("❌ ERROR CRÍTICO: Tu API Key de Gemini ha sido filtrada y bloqueada por Google. Por seguridad, ve a Google AI Studio, genera una llave nueva y actualiza VITE_GEMINI_API_KEY en Vercel.");
-                throw new Error("API Key bloqueada por seguridad (leaked). Requiere acción manual.");
-            }
+    for (const name of modelNames) {
+        // TIER 1: Intento sin forzar versión (deja que el SDK decida)
+        // TIER 2: Intento con v1
+        // TIER 3: Intento con v1beta
+        const versions = [undefined, 'v1', 'v1beta'];
 
-            console.warn(`⚠️ IA: Modelo ${modelInfo.name} (${modelInfo.version}) falló:`, errorMsg);
-            lastError = error;
-            continue;
+        for (const version of versions) {
+            try {
+                console.log(`🤖 IA: Probando ${name} ${version ? `(${version})` : '(Auto)'}...`);
+                
+                const modelOptions: any = { model: name };
+                const requestOptions: any = version ? { apiVersion: version } : undefined;
+                
+                const model = genAI.getGenerativeModel(modelOptions, requestOptions);
+                
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
+                
+                if (isJson) {
+                    const jsonText = text.replace(/```json|```/g, "").trim();
+                    return JSON.parse(jsonText);
+                }
+                return text;
+            } catch (error: any) {
+                lastError = error;
+                const msg = error.message || String(error);
+                if (msg.includes("leaked")) {
+                    console.error("❌ ERROR CRÍTICO: API Key bloqueada por Google (leaked).");
+                    throw new Error("API Key bloqueada.");
+                }
+                console.warn(`⚠️ IA: Intento fallido con ${name} ${version || 'Auto'}:`, msg);
+                continue;
+            }
         }
     }
 
-    throw lastError || new Error("Todos los modelos de Gemini fallaron (404/403).");
+    // Si todo falla, tiramos la sonda de diagnóstico antes de rendirnos
+    console.error("🚨 TODOS LOS MODELOS FALLARON. Iniciando sonda de diagnóstico...");
+    await listAvailableModels();
+
+    throw lastError || new Error("Falla masiva de conexión con Gemini (404/403).");
 }
 
 export async function parseTransactionWithAI(
