@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
@@ -196,20 +196,15 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
                                 <Bar dataKey="projection" name="Proyección" fill="#f87171" radius={[6, 6, 0, 0]} barSize={8} opacity={0.3} />
 
                                 {/* Benchmark Reference Line */}
-                                <svg>
-                                    {data.length > 0 && (
-                                        <line
-                                            x1="0"
-                                            y1={data[0].benchmark}
-                                            x2="100%"
-                                            y2={data[0].benchmark}
-                                            stroke="#facc15"
-                                            strokeDasharray="5 5"
-                                            strokeWidth={1}
-                                            opacity={0.5}
-                                        />
-                                    )}
-                                </svg>
+                                {data.length > 0 && data[0].benchmark > 0 && (
+                                    <ReferenceLine 
+                                        y={data[0].benchmark} 
+                                        stroke="#facc15" 
+                                        strokeDasharray="5 5" 
+                                        strokeOpacity={0.5}
+                                        label={{ value: 'Promedio', position: 'insideTopLeft', fill: '#facc15', fontSize: 10, fontWeight: 700 }}
+                                    />
+                                )}
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (

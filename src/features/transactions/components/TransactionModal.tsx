@@ -1,3 +1,4 @@
+import { Portal } from '@/components/ui/Portal';
 import React, { useEffect, useState } from 'react';
 import { X, Trash2, Sparkles, Loader2 } from 'lucide-react';
 import { Transaction, Category, Account } from '@/db/db';
@@ -42,7 +43,6 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                     subcategoryId: initialData.subcategoryId || ''
                 });
             } else {
-                // Reset for new transaction
                 setFormData({
                     description: '',
                     amount: 0,
@@ -58,8 +58,6 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
             }
         }
     }, [isOpen, initialData, accounts]);
-
-    if (!isOpen) return null;
 
     const [error, setError] = useState<string | null>(null);
     const [magicInput, setMagicInput] = useState('');
@@ -152,13 +150,16 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <AnimatePresence>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="liquid-glass rounded-[2rem] w-full max-w-md p-8 space-y-8 relative overflow-hidden"
-                >
+        <AnimatePresence>
+            {isOpen && (
+                <Portal>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="liquid-glass rounded-[2rem] w-full max-w-md p-8 space-y-8 relative overflow-hidden my-auto"
+                        >
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500" />
 
                     <button
@@ -392,8 +393,10 @@ export function TransactionModal({ isOpen, onClose, onSave, onDelete, initialDat
                             {initialData?.id ? 'Guardar Cambios' : 'Crear Movimiento'}
                         </button>
                     </div>
-                </motion.div>
-            </AnimatePresence>
-        </div>
+                        </motion.div>
+                    </div>
+                </Portal>
+            )}
+        </AnimatePresence>
     );
 }

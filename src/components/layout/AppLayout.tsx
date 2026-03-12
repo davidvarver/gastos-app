@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Portal } from '@/components/ui/Portal';
 import { useCheckBudgetAlerts } from '@/features/budgets/hooks/useCheckBudgetAlerts';
 import { TransactionModal } from '@/features/transactions/components/TransactionModal';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
@@ -97,7 +98,7 @@ export function AppLayout() {
                 </AnimatePresence>
 
                 <div className="px-6 py-8 max-w-6xl mx-auto">
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence>
                         <motion.div
                             key={location.pathname}
                             initial={{ opacity: 0, y: 20 }}
@@ -185,20 +186,22 @@ export function AppLayout() {
                     {/* Expanded Menu Overlay */}
                     <AnimatePresence>
                         {isMenuExpanded && (
-                            <>
+                            <Portal>
                                 <motion.div 
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                     onClick={() => setIsMenuExpanded(false)}
-                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[-1]"
-                                />
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                                    className="absolute bottom-24 right-0 left-0 liquid-glass rounded-3xl p-6 border-white/10 shadow-2xl z-50 overflow-hidden"
+                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 px-6 py-8"
                                 >
+                                    <div className="fixed bottom-32 left-1/2 -translate-x-1/2 w-full max-w-lg">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            className="liquid-glass rounded-3xl p-6 border-white/10 shadow-2xl relative overflow-hidden"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-3xl rounded-full" />
                                     <div className="grid grid-cols-3 gap-4 relative z-10">
                                         {[navItems[2], navItems[5], navItems[6], navItems[7], navItems[8]].map((item) => {
@@ -228,8 +231,10 @@ export function AppLayout() {
                                             <span className="text-[10px] font-black uppercase tracking-tighter">Cerrar</span>
                                         </button>
                                     </div>
+                                        </motion.div>
+                                    </div>
                                 </motion.div>
-                            </>
+                            </Portal>
                         )}
                     </AnimatePresence>
                 </nav>
