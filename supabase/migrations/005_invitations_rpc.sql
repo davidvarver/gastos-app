@@ -124,7 +124,17 @@ END;
 $$;
 
 -- 5. Añadir CONSTRAINT Unique a account_members para doble seguridad
-ALTER TABLE public.account_members ADD CONSTRAINT account_members_account_id_user_id_key UNIQUE (account_id, user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'account_members_account_id_user_id_key'
+  ) THEN
+    ALTER TABLE public.account_members
+    ADD CONSTRAINT account_members_account_id_user_id_key UNIQUE (account_id, user_id);
+  END IF;
+END $$;
 
 -- 6. Revoke generic access and strictly grant to explicit roles
 REVOKE EXECUTE ON FUNCTION public.get_invitation_info(uuid, text) FROM PUBLIC;
