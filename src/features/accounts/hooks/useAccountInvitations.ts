@@ -35,6 +35,7 @@ export function useAccountInvitations() {
                     {
                         account_id: accountId,
                         invited_by_user_id: user.id,
+                        inviter_email: user.email || '',
                         token,
                         role,
                         created_at: new Date().toISOString(),
@@ -94,14 +95,8 @@ export function useAccountInvitations() {
 
             if (accError) throw accError;
 
-            // Fetch inviter email
-            let inviterEmail = '';
-            if (invitation.invited_by_user_id) {
-                const { data: userData } = await supabase.auth.admin.getUserById(
-                    invitation.invited_by_user_id
-                );
-                inviterEmail = userData?.user?.email || '';
-            }
+            // Use inviter email directly from the DB
+            let inviterEmail = (invitation as any).inviter_email || 'Usuario de Gastos App';
 
             return {
                 accountId,

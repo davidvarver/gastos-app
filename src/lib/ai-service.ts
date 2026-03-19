@@ -1,15 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-// DIAGNÓSTICO: Log simplificado para verificar presencia de llave (sin exponerla toda)
-if (!API_KEY) {
-    console.error("❌ AI_SERVICE: VITE_GEMINI_API_KEY no detectada en environment.");
-} else {
-    console.log(`✅ AI_SERVICE: Key detectada (Inicia con: ${API_KEY.substring(0, 4)}..., Longitud: ${API_KEY.length})`);
-}
-
-const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+import { supabase } from './supabase';
 
 export interface ParsedTransaction {
     description: string;
@@ -22,88 +11,38 @@ export interface ParsedTransaction {
     isDeductible?: boolean;
 }
 
-// La lista de modelos se maneja dinámicamente en callWithFallback con tiers de API.
-
-async function listAvailableModels() {
-    const key = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!key) return;
-    try {
-        // Usamos fetch directo para evitar problemas de versión del SDK
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-        const data = await response.json();
-        if (data.models) {
-            console.log("🔎 DIAGNÓSTICO DE MODELOS: Tu API Key tiene acceso a:", 
-                data.models.map((m: any) => m.name.replace("models/", "")).join(", "));
-        } else {
-            console.log("🔎 DIAGNÓSTICO DE MODELOS: Google no devolvió modelos. Probable error de API Key o Región:", data);
-        }
-    } catch (e) {
-        console.log("🔎 DIAGNÓSTICO DE MODELOS: Error en la conexión de diagnóstico:", e);
-    }
-}
-
-async function callWithFallback(prompt: string, isJson: boolean = true) {
-    if (!genAI) {
-        throw new Error("AI Service no configurado. Verifica VITE_GEMINI_API_KEY.");
-    }
-
-    let lastError = null;
-    const modelNames = [
-        "gemini-flash-latest",
-        "gemini-2.0-flash", 
-        "gemini-pro-latest",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash", 
-        "gemini-1.5-pro"
-    ];
+async function callAIProxy(prompt: string, isJson: boolean = true) {
+    // 1. Get the current user session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-    for (const name of modelNames) {
-        const versions = [undefined, 'v1', 'v1beta'];
-
-        for (const version of versions) {
-            try {
-                // Pequeña pausa si el anterior fue un 429 para no saturar
-                if (lastError && lastError.message?.includes("429")) {
-                    await delay(500);
-                }
-
-                console.log(`🤖 IA: Probando ${name} ${version ? `(${version})` : '(Auto)'}...`);
-                
-                const modelOptions: any = { model: name };
-                const requestOptions: any = version ? { apiVersion: version } : undefined;
-                
-                const model = genAI.getGenerativeModel(modelOptions, requestOptions);
-                
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
-                
-                if (isJson) {
-                    const jsonText = text.replace(/```json|```/g, "").trim();
-                    return JSON.parse(jsonText);
-                }
-                return text;
-            } catch (error: any) {
-                lastError = error;
-                const msg = error.message || String(error);
-                if (msg.includes("leaked")) {
-                    console.error("❌ ERROR CRÍTICO: API Key bloqueada por Google (leaked).");
-                    throw new Error("API Key bloqueada.");
-                }
-                console.warn(`⚠️ IA: Intento fallido con ${name} ${version || 'Auto'}:`, msg);
-                continue;
-            }
-        }
+    if (sessionError || !session?.access_token) {
+        console.error("Auth Error:", sessionError);
+        throw new Error("Debes iniciar sesión para usar la inteligencia artificial.");
     }
 
-    // Si todo falla, tiramos la sonda de diagnóstico antes de rendirnos
-    console.error("🚨 TODOS LOS MODELOS FALLARON (404/403). Esto suele ser un problema de Región o de la API Key.");
-    await listAvailableModels();
+    // 2. Call our secure proxy
+    const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ prompt, isJson })
+    });
 
-    throw lastError || new Error("No se pudo conectar con el cerebro de la IA. Revisa la consola para más detalles.");
+    if (!response.ok) {
+        let errMessage = response.statusText;
+        try {
+            const errData = await response.json();
+            errMessage = errData.error || errMessage;
+        } catch (e) {
+            // ignore
+        }
+        throw new Error(errMessage);
+    }
+
+    const data = await response.json();
+    return data.result;
 }
 
 export async function parseTransactionWithAI(
@@ -140,10 +79,10 @@ export async function parseTransactionWithAI(
   `;
 
     try {
-        return await callWithFallback(prompt);
-    } catch (error) {
+        return await callAIProxy(prompt, true);
+    } catch (error: any) {
         console.error("Error parsing with AI:", error);
-        throw new Error("No pude entender la transacción. ¿Podrías ser más específico?");
+        throw new Error(error.message || "No pude entender la transacción. ¿Podrías ser más específico?");
     }
 }
 
@@ -157,14 +96,6 @@ export async function analyzeFinancialData(
         month: string;
     }
 ): Promise<string[]> {
-    if (!genAI) {
-        return [
-            "✨ Mantén un seguimiento constante para optimizar tu capital.",
-            "📊 Revisa tus categorías de mayor gasto para identificar oportunidades de ahorro.",
-            "🙏 El Maaser es una excelente práctica; asegúrate de mantener tu registro al día."
-        ];
-    }
-
     const prompt = `
     Como un coach financiero experto y amable, analiza estos datos mensuales (${data.month}):
     - Ingresos: ${data.income}
@@ -181,7 +112,7 @@ export async function analyzeFinancialData(
     `;
 
     try {
-        return await callWithFallback(prompt);
+        return await callAIProxy(prompt, true);
     } catch (error) {
         console.error("Error analyzing financials:", error);
         return [
