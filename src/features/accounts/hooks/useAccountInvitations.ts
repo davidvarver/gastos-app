@@ -63,46 +63,22 @@ export function useAccountInvitations() {
         setError(null);
 
         try {
-            // Fetch invitation
-            const { data: invitationData, error: invError } = await supabase
-                .from('account_invitations')
-                .select('*')
-                .eq('account_id', accountId)
-                .eq('token', token)
-                .maybeSingle();
+            // Fetch invitation using the secure RPC
+            const { data: result, error: rpcError } = await supabase.rpc('get_invitation_info', {
+                p_account_id: accountId,
+                p_token: token
+            });
 
-            if (invError) throw invError;
-            if (!invitationData) throw new Error('Invitation not found');
+            if (rpcError) throw rpcError;
+            if (!result || result.length === 0) throw new Error('Invitation not found, used, or expired');
 
-            const invitation = invitationData as AccountInvitationDB;
-
-            // Check if expired
-            if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-                throw new Error('Invitation has expired');
-            }
-
-            // Check if already used
-            if (invitation.used_at) {
-                throw new Error('Invitation has already been used');
-            }
-
-            // Fetch account name
-            const { data: accountData, error: accError } = await supabase
-                .from('accounts')
-                .select('name')
-                .eq('id', accountId)
-                .maybeSingle();
-
-            if (accError) throw accError;
-
-            // Use inviter email directly from the DB
-            let inviterEmail = (invitation as any).inviter_email || 'Usuario de Gastos App';
+            const invitation = result[0];
 
             return {
-                accountId,
-                accountName: accountData?.name || 'Unknown Account',
+                accountId: invitation.account_id,
+                accountName: invitation.account_name,
                 role: invitation.role,
-                inviterEmail,
+                inviterEmail: invitation.inviter_email,
                 expiresAt: invitation.expires_at ? new Date(invitation.expires_at) : null
             };
         } catch (err) {
@@ -122,64 +98,18 @@ export function useAccountInvitations() {
         setError(null);
 
         try {
-            // Fetch the invitation
-            const { data: invitationData, error: fetchError } = await supabase
-                .from('account_invitations')
-                .select('*')
-                .eq('account_id', accountId)
-                .eq('token', token)
-                .maybeSingle();
+            // Pre-fetch invitation to get the role
+            const info = await getInvitationInfo(accountId, token);
 
-            if (fetchError) throw fetchError;
-            if (!invitationData) throw new Error('Invitation not found');
+            // Execute the secure RPC to accept and bypassing isolated RLS safely
+            const { error: rpcError } = await supabase.rpc('accept_account_invitation', {
+                p_account_id: accountId,
+                p_token: token
+            });
 
-            const invitation = invitationData as AccountInvitationDB;
+            if (rpcError) throw rpcError;
 
-            // Validate invitation
-            if (invitation.used_at) {
-                throw new Error('Invitation has already been used');
-            }
-
-            if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
-                throw new Error('Invitation has expired');
-            }
-
-            // Check if user is already a member
-            const { data: existingMember } = await supabase
-                .from('account_members')
-                .select('id')
-                .eq('account_id', accountId)
-                .eq('user_id', user.id)
-                .maybeSingle();
-
-            if (existingMember) {
-                throw new Error('You are already a member of this account');
-            }
-
-            // Add user to account_members
-            const { error: insertError } = await supabase
-                .from('account_members')
-                .insert([
-                    {
-                        account_id: accountId,
-                        user_id: user.id,
-                        role: invitation.role,
-                        joined_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (insertError) throw insertError;
-
-            // Mark invitation as used
-            const { error: updateError } = await supabase
-                .from('account_invitations')
-                .update({ used_at: new Date().toISOString() })
-                .eq('id', invitation.id);
-
-            if (updateError) throw updateError;
-
-            return { accountId, role: invitation.role };
+            return { accountId, role: info.role };
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to accept invitation';
             setError(errorMsg);
@@ -240,14 +170,13 @@ export function useAccountInvitations() {
         setError(null);
 
         try {
-            // Just mark as used (effectively declining it)
-            const { error } = await supabase
-                .from('account_invitations')
-                .update({ used_at: new Date().toISOString() })
-                .eq('account_id', accountId)
-                .eq('token', token);
+            // Use the secure RPC to mark it as used
+            const { error: rpcError } = await supabase.rpc('decline_account_invitation', {
+                p_account_id: accountId,
+                p_token: token
+            });
 
-            if (error) throw error;
+            if (rpcError) throw rpcError;
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to decline invitation';
             setError(errorMsg);

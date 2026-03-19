@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         rateLimitMap.set(user.id, userRateData);
 
         // 4. Connect to Gemini API with fallback logic
-        const apiKey = (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY)?.trim();
+        const apiKey = (process.env.GEMINI_API_KEY)?.trim();
         if (!apiKey) {
              return res.status(500).json({ error: 'Server misconfiguration: AI service unavailable.' });
         }
