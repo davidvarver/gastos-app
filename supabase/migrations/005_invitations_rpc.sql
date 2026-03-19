@@ -34,7 +34,7 @@ BEGIN
 END;
 $$;
 
--- 3. Create RPC to accept an invitation and join an account securely
+-- 3. Create RPC to accept an invitation and join an account securely (con concurrencia)
 CREATE OR REPLACE FUNCTION public.accept_account_invitation(p_account_id uuid, p_token text)
 RETURNS void
 LANGUAGE plpgsql
@@ -51,10 +51,12 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  -- SELECT FOR UPDATE para evitar Race Conditions
   SELECT id, role, expires_at, used_at
   INTO v_invitation_id, v_role, v_expires_at, v_used_at
   FROM account_invitations
-  WHERE account_id = p_account_id AND token = p_token;
+  WHERE account_id = p_account_id AND token = p_token
+  FOR UPDATE;
 
   IF v_invitation_id IS NULL THEN
     RAISE EXCEPTION 'Invitation not found';
@@ -73,31 +75,58 @@ BEGIN
     RAISE EXCEPTION 'You are already a member of this account';
   END IF;
 
-  -- Insert member
-  INSERT INTO account_members (account_id, user_id, role, joined_at, updated_at)
-  VALUES (p_account_id, auth.uid(), v_role, NOW(), NOW());
-
   -- Consume invite
   UPDATE account_invitations SET used_at = NOW() WHERE id = v_invitation_id;
+
+  -- Insert member (maneja el constraint unique de forma segura)
+  INSERT INTO account_members (account_id, user_id, role, joined_at, updated_at)
+  VALUES (p_account_id, auth.uid(), v_role, NOW(), NOW());
 END;
 $$;
 
--- 4. Create RPC to reject/decline an invitation (just marking it used as the inviter intended without joining)
+-- 4. Create RPC to reject/decline an invitation
 CREATE OR REPLACE FUNCTION public.decline_account_invitation(p_account_id uuid, p_token text)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_invitation_id uuid;
+  v_used_at timestamp with time zone;
+  v_expires_at timestamp with time zone;
 BEGIN
-  -- We just mark it used so it can't be used again
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  -- Validación y bloqueo concurrente
+  SELECT id, used_at, expires_at
+  INTO v_invitation_id, v_used_at, v_expires_at
+  FROM account_invitations
+  WHERE account_id = p_account_id AND token = p_token
+  FOR UPDATE;
+
+  IF v_invitation_id IS NULL THEN
+    RAISE EXCEPTION 'Invitation not found';
+  END IF;
+  IF v_used_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Invitation already used';
+  END IF;
+  IF v_expires_at IS NOT NULL AND v_expires_at < NOW() THEN
+    RAISE EXCEPTION 'Invitation expired';
+  END IF;
+
   UPDATE account_invitations 
   SET used_at = NOW() 
-  WHERE account_id = p_account_id AND token = p_token;
+  WHERE id = v_invitation_id;
 END;
 $$;
 
--- 5. Revoke generic access and strictly grant to explicit roles
+-- 5. Añadir CONSTRAINT Unique a account_members para doble seguridad
+ALTER TABLE public.account_members ADD CONSTRAINT account_members_account_id_user_id_key UNIQUE (account_id, user_id);
+
+-- 6. Revoke generic access and strictly grant to explicit roles
 REVOKE EXECUTE ON FUNCTION public.get_invitation_info(uuid, text) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.accept_account_invitation(uuid, text) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.decline_account_invitation(uuid, text) FROM PUBLIC;
