@@ -97,18 +97,21 @@ export async function analyzeFinancialData(
     }
 ): Promise<string[]> {
     const prompt = `
-    Como un coach financiero experto y amable, analiza estos datos mensuales (${data.month}):
+    Actúa como un asesor financiero amigable, moderno y súper práctico. Analiza tus datos mensuales reales (${data.month}):
     - Ingresos: ${data.income}
     - Gastos: ${data.expense}
     - Neto: ${data.net}
     - Maaser/Donaciones: ${data.maaser}
-    - Categorías principales: ${data.topCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
+    - Categorías principales de gasto: ${data.topCategories.map(c => `${c.name}: ${c.amount}`).join(", ")}
 
-    Proporciona 3 consejos personalizados y accionables de una sola frase cada uno.
-    Usa un tono premium, alentador y profesional.
-    Si el balance es negativo, sé empático pero directo.
-    Si hay ahorro, sugiere cómo optimizarlo.
-    Devuelve un JSON con el formato: ["consejo1", "consejo2", "consejo3"]
+    Genera EXACTAMENTE 3 consejos cortos y MUY PRÁCTICOS (máximo 15-20 palabras cada uno) basados ESTRICTAMENTE en los números de arriba.
+
+    REGLAS DEL TONO:
+    - Usa un lenguaje cotidiano, directo y natural (como si hablaras por WhatsApp con un amigo).
+    - PROHIBIDO usar palabras formales o rimbombantes como "perfil patrimonial", "liquidez objetiva", "cultura de generosidad", "optimizar capital", etc.
+    - Da consejos útiles para el día a día. Por ejemplo: "Gastaste mucho en despensa, quizás debas hacer lista antes de ir al súper", "Te sobró buen dinero, ¡mándalo a inversión!", "Ojo con los gastos, estás gastando más de lo que ganas".
+    
+    Devuelve un JSON estrictamente con un array de 3 elementos: ["consejo1", "consejo2", "consejo3"]
     `;
 
     try {
@@ -116,9 +119,9 @@ export async function analyzeFinancialData(
     } catch (error) {
         console.error("Error analyzing financials:", error);
         return [
-            "✨ Mantén un seguimiento constante para optimizar tu capital.",
-            "📊 Revisa tus categorías de mayor gasto para identificar oportunidades de ahorro.",
-            "🙏 El Maaser es una excelente práctica; asegúrate de mantener tu registro al día."
+            "✨ Sigue registrando tus gastos diarios para no perder el control de tu quincena.",
+            "📊 Échale un ojo a tus categorías principales para ver dónde podrías recortar un poco.",
+            "🙏 Separar tu Maaser a tiempo es un gran hábito, ¡sigue así!"
         ];
     }
 }
