@@ -127,6 +127,17 @@ export function TransactionsPage() {
         setIsModalOpen(true);
     };
 
+    const formatSafeDate = (d: Date | string, formatStr: string) => {
+        try {
+            const dateObj = new Date(d);
+            const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
+            const safeDate = new Date(dateObj.getTime() + userTimezoneOffset);
+            return format(safeDate, formatStr, { locale: es });
+        } catch (e) {
+            return '';
+        }
+    };
+
     const handleSave = async (txData: Partial<Transaction>) => {
         if (editingTx?.id) {
             await updateTransaction(editingTx.id, txData);
@@ -443,7 +454,7 @@ export function TransactionsPage() {
                                         </td>
                                         {visibleColumns.date && (
                                             <td className="px-6 py-4 text-slate-400 font-mono whitespace-nowrap">
-                                                {format(tx.date, 'dd/MM/yy', { locale: es })}
+                                                {formatSafeDate(tx.date, 'dd/MM/yy')}
                                             </td>
                                         )}
                                         {visibleColumns.description && (
@@ -596,7 +607,7 @@ export function TransactionsPage() {
                                 <div className="flex justify-between items-start mb-1">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
-                                            {format(tx.date, 'dd MMM yyyy', { locale: es })}
+                                            {formatSafeDate(tx.date, 'dd MMM yyyy')}
                                         </span>
                                         <span className="font-bold text-slate-100 line-clamp-1">{tx.description}</span>
                                     </div>
