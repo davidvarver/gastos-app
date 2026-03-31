@@ -54,7 +54,6 @@ export function calculateTransactionEffects(
     const dbTx: TransactionForInsert = {
         id: txId,
         user_id: user_id,
-        created_by_user_id: user_id, // NEW: Track creator for collaborative accounts
         date: txData.date.toISOString(),
         amount: txData.amount,
         description: txData.description,
@@ -94,7 +93,6 @@ export function calculateTransactionEffects(
                 txsToInsert.push({
                     id: autoTxId,
                     user_id: user_id,
-                    created_by_user_id: user_id, // Include creator tracking
                     date: txData.date.toISOString(),
                     amount: maaserAmount,
                     description: `Maaser (10%): ${txData.description}`,
@@ -119,7 +117,6 @@ export function calculateTransactionEffects(
             txsToInsert.push({
                 id: autoTxId,
                 user_id: user_id,
-                created_by_user_id: user_id, // Include creator tracking
                 date: txData.date.toISOString(),
                 amount: txData.amount,
                 description: `Reembolso Maaser: ${txData.description}`,
