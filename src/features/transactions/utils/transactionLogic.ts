@@ -61,7 +61,7 @@ export function calculateTransactionEffects(
         category_id: txData.categoryId || null,
         subcategory_id: txData.subcategoryId || null,
         account_id: txData.accountId,
-        to_account_id: txData.toAccountId,
+        to_account_id: txData.toAccountId || null,
         status: txData.status as 'pending' | 'cleared',
         notes: txData.notes,
         is_system_generated: txData.isSystemGenerated ?? false,

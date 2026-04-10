@@ -266,7 +266,7 @@ export interface TransactionForInsert {
     category_id?: string | null;
     subcategory_id?: string | null;
     account_id: string;
-    to_account_id?: string;
+    to_account_id?: string | null;
     status: 'pending' | 'cleared';
     notes?: string;
     is_system_generated?: boolean;
