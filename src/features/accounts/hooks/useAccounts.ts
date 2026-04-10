@@ -63,6 +63,7 @@ export function useAccounts() {
 
         const dbAccount = {
             user_id: user.id,
+            created_by_user_id: user.id,
             name: account.name,
             type: account.type,
             currency: account.currency,
@@ -93,7 +94,8 @@ export function useAccounts() {
                 defaultExpenseDeductible: data.default_expense_deductible,
                 isSavingsGoal: data.is_savings_goal,
                 targetAmount: data.target_amount ? Number(data.target_amount) : undefined,
-                deadline: data.deadline ? new Date(data.deadline) : undefined
+                deadline: data.deadline ? new Date(data.deadline) : undefined,
+                createdByUserId: data.created_by_user_id
             };
             setAccounts(prev => [...(prev || []), newAccount].sort((a, b) => a.name.localeCompare(b.name)));
         }

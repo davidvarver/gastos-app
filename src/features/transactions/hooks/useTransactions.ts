@@ -99,6 +99,7 @@ export function useTransactions() {
                 .from('accounts')
                 .insert([{
                     user_id: user.id,
+                    created_by_user_id: user.id,
                     name: 'Maaser',
                     type: 'savings', // Default to savings or similar
                     currency: 'MXN', // Default currency, maybe infer from others?
