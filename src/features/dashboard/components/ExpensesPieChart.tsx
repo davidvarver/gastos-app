@@ -22,10 +22,12 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
     const [hasSize, setHasSize] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
-        if (containerRef && containerRef.clientWidth > 0) {
-            setHasSize(true);
-        }
+        queueMicrotask(() => {
+            setIsMounted(true);
+            if (containerRef && containerRef.clientWidth > 0) {
+                setHasSize(true);
+            }
+        });
     }, [containerRef]);
 
     useEffect(() => {
@@ -131,7 +133,7 @@ export function ExpensesPieChart({ currentDate, accountId, cardholder }: Expense
         }
 
         return chartData;
-    }, [transactions, categories, timeRange, currentDate, accountId, viewMode]);
+    }, [transactions, categories, timeRange, currentDate, accountId, viewMode, cardholder]);
 
     return (
         <Card className="bg-[#151e32] border-[#1e293b]">

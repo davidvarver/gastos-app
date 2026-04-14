@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { Category } from '@/db/db';
 
 import { IconPicker } from '@/components/ui/IconPicker';
-import { getIcon } from '@/lib/icons';
 
 interface CategoryFormModalProps {
     isOpen: boolean;
@@ -20,19 +19,21 @@ export function CategoryFormModal({ isOpen, onClose, onSave, initialData }: Cate
     const [icon, setIcon] = useState('tag');
 
     useEffect(() => {
-        if (isOpen) {
-            if (initialData) {
-                setName(initialData.name);
-                setType(initialData.type);
-                setColor(initialData.color);
-                setIcon(initialData.icon || 'tag');
-            } else {
-                setName('');
-                setType(undefined);
-                setColor('#3b82f6');
-                setIcon('tag');
+        queueMicrotask(() => {
+            if (isOpen) {
+                if (initialData) {
+                    setName(initialData.name);
+                    setType(initialData.type);
+                    setColor(initialData.color);
+                    setIcon(initialData.icon || 'tag');
+                } else {
+                    setName('');
+                    setType(undefined);
+                    setColor('#3b82f6');
+                    setIcon('tag');
+                }
             }
-        }
+        });
     }, [isOpen, initialData]);
 
     const handleSubmit = async (e: React.FormEvent) => {

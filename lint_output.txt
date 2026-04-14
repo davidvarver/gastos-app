@@ -1,0 +1,297 @@
+
+> gastos-app@0.0.0 lint
+> eslint .
+
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\components\layout\AppLayout.tsx
+   1:27  error  'useMemo' is defined but never used   @typescript-eslint/no-unused-vars
+  15:5   error  'Sparkles' is defined but never used  @typescript-eslint/no-unused-vars
+  16:5   error  'Settings' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\components\modals\GenericFormModal.tsx
+  17:59  error    Unexpected any. Specify a different type                                                                                                                                                                                                             @typescript-eslint/no-explicit-any
+  39:8   warning  React Hook React.useEffect has a missing dependency: 'getDefaultState'. Either include it or remove the dependency array. If 'getDefaultState' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\components\ui\Portal.tsx
+  12:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\components\ui\Portal.tsx:12:9
+  10 |
+  11 |     useEffect(() => {
+> 12 |         setMounted(true);
+     |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  13 |         return () => setMounted(false);
+  14 |     }, []);
+  15 |  react-hooks/set-state-in-effect
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\components\ui\Skeleton.tsx
+  3:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\db\db.ts
+  242:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\AccountsPage.tsx
+   2:25  error  'X' is defined but never used                   @typescript-eslint/no-unused-vars
+  31:11  error  'addMember' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\JoinAccountPage.tsx
+   7:10  error  'parseInvitationLink' is defined but never used  @typescript-eslint/no-unused-vars
+  19:31  error  'hookError' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  22:58  error  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  57:19  error  'result' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\components\AccountCard.tsx
+  2:18  error  'MoreVertical' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\components\AccountFormModal.tsx
+  2:24  error  'AccountInput' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\components\InviteCollaboratorDialog.tsx
+  18:5   error  'accountId' is defined but never used  @typescript-eslint/no-unused-vars
+  52:18  error  'err' is defined but never used        @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\hooks\useAccountInvitations.ts
+  4:29  error  'AccountInvitationDB' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\hooks\useAccountMembers.ts
+  80:8  warning  React Hook useEffect has a missing dependency: 'fetchMembers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\accounts\hooks\useAccounts.ts
+  59:8  warning  React Hook useEffect has a missing dependency: 'fetchAccounts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\auth\AuthProvider.tsx
+  53:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\budgets\BudgetsPage.tsx
+  11:13  error  'budgets' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  11:67  error  'updateBudget' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\budgets\components\BudgetForm.tsx
+  3:10  error  'setMonth' is defined but never used  @typescript-eslint/no-unused-vars
+  3:20  error  'setYear' is defined but never used   @typescript-eslint/no-unused-vars
+  4:10  error  'cn' is defined but never used        @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\budgets\hooks\useBudgets.ts
+  3:41  error  'Transaction' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\budgets\hooks\useCheckBudgetAlerts.ts
+   3:10  error  'BudgetStatus' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  49:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\budgets\hooks\useCheckBudgetAlerts.ts:49:9
+  47 |         });
+  48 |
+> 49 |         setActiveAlerts(alerts);
+     |         ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |         setHasAnyAlert(alerts.length > 0);
+  51 |     }, [budgetStatuses]);
+  52 |  react-hooks/set-state-in-effect
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\categories\CategoriesPage.tsx
+   3:31  error    'ChevronDown' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+   3:44  error    'ChevronRight' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+   5:10  error    'cn' is defined but never used                                                                                            @typescript-eslint/no-unused-vars
+  32:8   warning  React Hook useEffect has a missing dependency: 'seedDefaultCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  58:11  error    'handleSubmit' is assigned a value but never used                                                                         @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\categories\components\CategoryFormModal.tsx
+   7:10  error  'getIcon' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  25:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\categories\components\CategoryFormModal.tsx:25:17
+  23 |         if (isOpen) {
+  24 |             if (initialData) {
+> 25 |                 setName(initialData.name);
+     |                 ^^^^^^^ Avoid calling setState() directly within an effect
+  26 |                 setType(initialData.type);
+  27 |                 setColor(initialData.color);
+  28 |                 setIcon(initialData.icon || 'tag');  react-hooks/set-state-in-effect
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\categories\hooks\useCategories.ts
+   57:8   warning  React Hook useEffect has a missing dependency: 'fetchCategories'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  101:26  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\DashboardPage.tsx
+    1:20   error    'useMemo' is defined but never used                                                                                                                                @typescript-eslint/no-unused-vars
+    6:131  error    'Loader2' is defined but never used                                                                                                                                @typescript-eslint/no-unused-vars
+   59:69   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   64:34   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   65:63   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   66:58   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+   96:8    warning  React Hook useEffect has missing dependencies: 'categories', 'isLoading', 'maaser', 'net', and 'transactions'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  117:30   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  118:27   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  120:56   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  122:27   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  122:35   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  126:30   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  127:59   error    Unexpected any. Specify a different type                                                                                                                           @typescript-eslint/no-explicit-any
+  255:30   error    'i' is defined but never used                                                                                                                                      @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\components\ExpensesPieChart.tsx
+   25:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\components\ExpensesPieChart.tsx:25:9
+  23 |
+  24 |     useEffect(() => {
+> 25 |         setIsMounted(true);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  26 |         if (containerRef && containerRef.clientWidth > 0) {
+  27 |             setHasSize(true);
+  28 |         }                                                                                                                                                                                                                                       react-hooks/set-state-in-effect
+   41:26  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `cardholder`, but the source dependencies were [transactions, categories, timeRange, currentDate, accountId, viewMode]. Inferred different dependency than source.
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\components\ExpensesPieChart.tsx:41:26
+   39 |     }, [containerRef]);
+   40 |
+>  41 |     const data = useMemo(() => {
+      |                          ^^^^^^^
+>  42 |         if (!transactions || !categories) return [];
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  43 |
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 133 |         return chartData;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 134 |     }, [transactions, categories, timeRange, currentDate, accountId, viewMode]);
+      | ^^^^^^ Could not preserve existing manual memoization
+  135 |
+  136 |     return (
+  137 |         <Card className="bg-[#151e32] border-[#1e293b]">  react-hooks/preserve-manual-memoization
+  134:8   warning  React Hook useMemo has a missing dependency: 'cardholder'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\components\IncomeVsExpenseChart.tsx
+   23:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\components\IncomeVsExpenseChart.tsx:23:9
+  21 |
+  22 |     useEffect(() => {
+> 23 |         setIsMounted(true);
+     |         ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  24 |         if (containerRef && containerRef.clientWidth > 0) {
+  25 |             setHasSize(true);
+  26 |         }  react-hooks/set-state-in-effect
+  127:56  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\dashboard\hooks\useDashboard.ts
+  109:8  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\import\ImportPage.tsx
+  121:11  error  'handleGlobalCardholderChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\import\utils\parsers.ts
+  33:23  error  'isAmex' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  93:30  error  'e' is defined but never used                @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\import\utils\pdfParser.ts
+    5:1   error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+  209:26  error  'e' is defined but never used                                                                                        @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\savings\SavingsPage.tsx
+    2:27  error  'Target' is defined but never used        @typescript-eslint/no-unused-vars
+    2:57  error  'MoreVertical' is defined but never used  @typescript-eslint/no-unused-vars
+  180:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\savings\components\GoalFormModal.tsx
+  23:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\savings\components\GoalFormModal.tsx:23:17
+  21 |         if (isOpen) {
+  22 |             if (initialData) {
+> 23 |                 setFormData({
+     |                 ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  24 |                     name: initialData.name,
+  25 |                     targetAmount: initialData.targetAmount?.toString() || '',
+  26 |                     deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',  react-hooks/set-state-in-effect
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\RecurringPage.tsx
+   2:47  error    'CheckCircle2' is defined but never used                                                                         @typescript-eslint/no-unused-vars
+   8:10  error    'format' is defined but never used                                                                               @typescript-eslint/no-unused-vars
+   9:10  error    'es' is defined but never used                                                                                   @typescript-eslint/no-unused-vars
+  50:8   warning  React Hook useEffect has a missing dependency: 'seedDefaults'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\TransactionsPage.tsx
+    2:68  error  'Save' is defined but never used                @typescript-eslint/no-unused-vars
+    2:77  error  'ChevronDown' is defined but never used         @typescript-eslint/no-unused-vars
+    3:10  error  'toast' is defined but never used               @typescript-eslint/no-unused-vars
+   19:9   error  'isLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   28:12  error  'filter' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   28:20  error  'setFilter' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  136:18  error  'e' is defined but never used                   @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\components\TransactionModal.tsx
+  105:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:46  error  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\hooks\useRecurringTransactions.ts
+  46:8  warning  React Hook useEffect has a missing dependency: 'fetchRecurring'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\hooks\useTransactions.ts
+   69:8   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  276:41  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\transactions\utils\transactionLogic.ts
+  1:15  error  'Transaction' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\trends\TrendsPage.tsx
+   2:10  error  'TrendingUp' is defined but never used                    @typescript-eslint/no-unused-vars
+   2:22  error  'TrendingDown' is defined but never used                  @typescript-eslint/no-unused-vars
+   2:36  error  'Zap' is defined but never used                           @typescript-eslint/no-unused-vars
+   6:80  error  'Legend' is defined but never used                        @typescript-eslint/no-unused-vars
+  28:25  error  'comparisonLastMonth' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\features\trends\hooks\useTrendData.ts
+  5:5  error  'MonthlyData' is defined but never used  @typescript-eslint/no-unused-vars
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\lib\ai-service.ts
+  38:18  error  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  83:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\lib\error-handler.ts
+  21:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  54:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  82:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+c:\Users\david\OneDrive\Escritorio\gastos-app1.0\src\lib\icons.ts
+  34:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 98 problems (87 errors, 11 warnings)
+

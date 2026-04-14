@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square, Save, X, ChevronDown, Columns } from 'lucide-react';
-import { toast } from 'sonner';
+import { Plus, Search, Filter, Trash2, Edit2, CheckSquare, Square, X, Columns } from 'lucide-react';
 import { useTransactions } from './hooks/useTransactions';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useCategories } from '@/features/categories/hooks/useCategories';
@@ -16,7 +15,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function TransactionsPage() {
     const {
         transactions,
-        isLoading,
         error,
         addTransaction,
         updateTransaction,
@@ -25,7 +23,6 @@ export function TransactionsPage() {
     } = useTransactions();
     const { accounts, addAccount, isLoading: accountsLoading } = useAccounts();
     const { categories, addCategory } = useCategories();
-    const [filter, setFilter] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // Search State
@@ -133,7 +130,7 @@ export function TransactionsPage() {
             const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
             const safeDate = new Date(dateObj.getTime() + userTimezoneOffset);
             return format(safeDate, formatStr, { locale: es });
-        } catch (e) {
+        } catch {
             return '';
         }
     };

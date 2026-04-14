@@ -20,10 +20,12 @@ export function IncomeVsExpenseChart({ onMonthClick, accountId, cardholder }: In
     const [hasSize, setHasSize] = useState(false);
 
     useEffect(() => {
-        setIsMounted(true);
-        if (containerRef && containerRef.clientWidth > 0) {
-            setHasSize(true);
-        }
+        queueMicrotask(() => {
+            setIsMounted(true);
+            if (containerRef && containerRef.clientWidth > 0) {
+                setHasSize(true);
+            }
+        });
     }, [containerRef]);
 
     // Re-check size on window resize

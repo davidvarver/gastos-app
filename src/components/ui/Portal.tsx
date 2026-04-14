@@ -9,7 +9,7 @@ export function Portal({ children }: PortalProps) {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        queueMicrotask(() => setMounted(true));
         return () => setMounted(false);
     }, []);
 

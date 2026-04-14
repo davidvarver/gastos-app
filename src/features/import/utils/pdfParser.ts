@@ -95,7 +95,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
         // Parse rows
         for (let j = 0; j < rows.length; j++) {
             const row = rows[j];
-            let line = row.text;
+            const line = row.text;
             console.log("PDF Row:", line); // Debug log
 
             // Regex for Spanish Date: "27 de Agosto", "11 de Septiembre"
@@ -105,7 +105,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
             // Regex for Amount: Number with commas and decimals, maybe negative sign
             const amountRegex = /(-?\$?\s?[\d,]+\.\d{2})/;
 
-            let dateMatch = line.match(dateRegex);
+            const dateMatch = line.match(dateRegex);
             const amountMatch = line.match(amountRegex);
             let dateObj: Date | null = null;
 
@@ -140,7 +140,7 @@ export async function parsePDF(file: File): Promise<{ transactions: RawTransacti
                     let amount = parseFloat(amountStr);
 
                     // Check next line for extra info (Description continuation or CR)
-                    let nextLineIndex = j + 1;
+                    const nextLineIndex = j + 1;
                     let extraDescription = "";
                     let foundCRInNext = false;
 

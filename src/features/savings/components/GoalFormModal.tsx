@@ -18,23 +18,25 @@ export function GoalFormModal({ isOpen, onClose, onSubmit, initialData }: GoalFo
     });
 
     useEffect(() => {
-        if (isOpen) {
-            if (initialData) {
-                setFormData({
-                    name: initialData.name,
-                    targetAmount: initialData.targetAmount?.toString() || '',
-                    deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
-                    initialBalance: initialData.initialBalance.toString()
-                });
-            } else {
-                setFormData({
-                    name: '',
-                    targetAmount: '',
-                    deadline: '',
-                    initialBalance: '0'
-                });
+        queueMicrotask(() => {
+            if (isOpen) {
+                if (initialData) {
+                    setFormData({
+                        name: initialData.name,
+                        targetAmount: initialData.targetAmount?.toString() || '',
+                        deadline: initialData.deadline ? new Date(initialData.deadline).toISOString().split('T')[0] : '',
+                        initialBalance: initialData.initialBalance.toString()
+                    });
+                } else {
+                    setFormData({
+                        name: '',
+                        targetAmount: '',
+                        deadline: '',
+                        initialBalance: '0'
+                    });
+                }
             }
-        }
+        });
     }, [isOpen, initialData]);
 
     if (!isOpen) return null;

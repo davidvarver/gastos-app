@@ -64,24 +64,24 @@ export async function parseCSV(file: File): Promise<ImportResult> {
                 (results.data as Array<Record<string, unknown>>).forEach((row) => {
                     try {
                         // Normalize Date
-                        let dateStr = getColumnValue(row, ['Fecha', 'Date', 'FECHA']);
+                        const dateStr = getColumnValue(row, ['Fecha', 'Date', 'FECHA']);
 
                         // Normalize Description
                         // Add 'Descripci' to catch 'DescripciÃ³n' encoding errors
-                        let description = getColumnValue(row, ['Descripción', 'Description', 'Concepto', 'CONCEPTO', 'Descripci']) || 'Sin descripción';
+                        const description = getColumnValue(row, ['Descripción', 'Description', 'Concepto', 'CONCEPTO', 'Descripci']) || 'Sin descripción';
 
                         // Normalize Amount
-                        let amountStr = getColumnValue(row, ['Monto', 'Amount', 'Importe', 'IMPORTE']);
+                        const amountStr = getColumnValue(row, ['Monto', 'Amount', 'Importe', 'IMPORTE']);
                         if (!amountStr) return;
 
                         // Clean currency symbols
-                        let amount = parseFloat(String(amountStr).replace(/[$,]/g, ''));
+                        const amount = parseFloat(String(amountStr).replace(/[$,]/g, ''));
 
                         if (isNaN(amount)) return;
 
                         // Normalize Cardholder
                         // Added 'Titular de la Tarjeta' specifically for Amex
-                        let cardholder = getColumnValue(row, ['Tarjetahabiente', 'Cardholder', 'Titular de la Tarjeta', 'Titular', 'Nombre']);
+                        const cardholder = getColumnValue(row, ['Tarjetahabiente', 'Cardholder', 'Titular de la Tarjeta', 'Titular', 'Nombre']);
 
                         transactions.push({
                             date: String(dateStr),
